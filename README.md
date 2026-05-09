@@ -8,9 +8,10 @@ hardening, monitoring, mail relay and alerting.
 
 ## Quickstart
 
+Install
 ```bash
 git clone https://github.com/WildcatKSS/Ubuntu-24.04-LTS-Configuration-Toolkit
-cd ubuntu-toolkit
+cd Ubuntu-24.04-LTS-Configuration-Toolkit
 cp config/defaults.conf.example config/defaults.conf
 sudo vi config/defaults.conf
 
@@ -18,6 +19,11 @@ sudo ./main.sh --list      # show modules and dependency graph
 sudo ./main.sh --plan      # read-only audit (no changes)
 sudo ./main.sh --dry-run   # bash -n syntax check
 sudo ./main.sh             # actual run
+```
+
+Update
+```bash
+git pull origin main
 ```
 
 ---
