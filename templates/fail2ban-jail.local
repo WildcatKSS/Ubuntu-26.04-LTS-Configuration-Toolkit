@@ -1,0 +1,17 @@
+# Fail2ban jail configuration — installed by script 04-network-hardening
+# /etc/fail2ban/jail.local
+
+[DEFAULT]
+bantime  = 3600
+findtime = 600
+maxretry = 5
+backend  = systemd
+
+# Whitelist localhost (IPv4 only — IPv6 is disabled by toolkit)
+ignoreip = 127.0.0.1/8
+
+[sshd]
+enabled = true
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s

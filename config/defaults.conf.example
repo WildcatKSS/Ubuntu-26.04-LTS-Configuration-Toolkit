@@ -1,0 +1,58 @@
+# Ubuntu 24.04 LTS Configuration Toolkit — defaults
+#
+# Copy this file to config/defaults.conf and edit values.
+# Variables prompted interactively (or via env var) — NOT in this file:
+#   ADMIN_USER, ADMIN_PASSWORD       (script 01)
+#   SWAP_ENCRYPT                     (script 02)
+#   SKIP_PARTITIONS                  (script 02 — set as env var to skip)
+
+# ---------------------------------------------------------------------------
+# Network
+# ---------------------------------------------------------------------------
+NETWORK_INTERFACE="ens3"
+USE_DHCP="false"                  # true for DHCP, false for static IP
+IP_ADDRESS="192.168.1.10"         # only used if USE_DHCP=false
+PREFIX_LENGTH="24"                # only used if USE_DHCP=false
+GATEWAY="192.168.1.1"             # only used if USE_DHCP=false
+DNS_SERVERS="1.1.1.3 1.0.0.3"     # space separated; only used if USE_DHCP=false
+
+# ---------------------------------------------------------------------------
+# System identity
+# ---------------------------------------------------------------------------
+HOSTNAME="server.local.lan"
+
+# ---------------------------------------------------------------------------
+# Time / NTP
+# ---------------------------------------------------------------------------
+NTP_SERVERS=(
+  "0.nl.pool.ntp.org"
+  "1.nl.pool.ntp.org"
+  "2.nl.pool.ntp.org"
+  "3.nl.pool.ntp.org"
+)
+FALLBACK_NTP="time.cloudflare.com time.google.com"
+
+TIMEZONE="Europe/Amsterdam"
+LOCALE="nl_NL.UTF-8"
+
+# ---------------------------------------------------------------------------
+# Partitions / LVM
+# ---------------------------------------------------------------------------
+DISK_DEVICE="/dev/sda"            # disk on which LVM is set up
+
+# ---------------------------------------------------------------------------
+# Email / SMTP relay
+# ---------------------------------------------------------------------------
+EMAIL_TO="admin@example.com"
+SMTP_RELAY_HOST="smtp.example.com"
+SMTP_RELAY_PORT="587"
+
+# ---------------------------------------------------------------------------
+# Alerts
+# ---------------------------------------------------------------------------
+DISK_ALERT_THRESHOLD=85           # % disk usage that triggers an alert
+
+# ---------------------------------------------------------------------------
+# Unattended upgrades
+# ---------------------------------------------------------------------------
+AUTO_SECURITY_UPDATES="true"

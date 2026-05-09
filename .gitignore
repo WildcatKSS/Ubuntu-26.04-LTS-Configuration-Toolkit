@@ -1,0 +1,31 @@
+# Configuration files (may contain credentials)
+config/defaults.conf
+*.local.conf
+.env
+.env.local
+
+# Logs
+/tmp/
+/var/log/toolkit-setup.log
+logs/
+*.log
+
+# Testing artifacts
+test-results/
+bats-report.json
+.bats/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local state
+.state
+state.txt

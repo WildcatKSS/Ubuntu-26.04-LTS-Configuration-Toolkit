@@ -1,0 +1,46 @@
+# Audit rules — installed by script 07-hardening
+# /etc/audit/rules.d/99-toolkit.rules
+
+# Delete all existing rules
+-D
+
+# Buffer size
+-b 8192
+
+# Failure mode (1 = printk, 2 = panic)
+-f 1
+
+# --- Identity ---
+-w /etc/passwd            -p wa -k identity
+-w /etc/group             -p wa -k identity
+-w /etc/shadow            -p wa -k identity
+-w /etc/gshadow           -p wa -k identity
+-w /etc/security/opasswd  -p wa -k identity
+
+# --- Sudoers ---
+-w /etc/sudoers           -p wa -k scope
+-w /etc/sudoers.d/        -p wa -k scope
+
+# --- Login / logout / session ---
+-w /var/log/faillog       -p wa -k logins
+-w /var/log/lastlog       -p wa -k logins
+-w /var/run/utmp          -p wa -k session
+-w /var/log/wtmp          -p wa -k session
+-w /var/log/btmp          -p wa -k session
+
+# --- Time ---
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k time-change
+-w /etc/localtime         -p wa -k time-change
+
+# --- Network configuration ---
+-w /etc/hosts             -p wa -k network
+-w /etc/network/          -p wa -k network
+-w /etc/netplan/          -p wa -k network
+
+# --- Kernel module loading ---
+-w /sbin/insmod           -p x  -k modules
+-w /sbin/rmmod            -p x  -k modules
+-w /sbin/modprobe         -p x  -k modules
+
+# Make rules immutable until next reboot
+-e 2

@@ -1,0 +1,35 @@
+# Logrotate policy — installed by script 08-monitoring
+# /etc/logrotate.d/custom
+
+/var/log/toolkit-setup.log
+/var/log/auth.log
+/var/log/cron.log
+/var/log/kernel-warnings.log
+{
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root adm
+    sharedscripts
+    postrotate
+        systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/audit/audit.log
+{
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0600 root root
+    sharedscripts
+    postrotate
+        /sbin/service auditd restart >/dev/null 2>&1 || true
+    endscript
+}

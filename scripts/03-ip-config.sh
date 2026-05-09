@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# MODULE: 03-ip-config
+# DESC: Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore on failure
+# DEPENDS: 02-partitions
+# IDEMPOTENT: yes
+# DESTRUCTIVE: no
+
+set -euo pipefail
+TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+# shellcheck source=../lib/common.sh
+source "$TOOLKIT_ROOT/lib/common.sh"
+
+PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
+
+# 1. Hostname
+if [ "$PLAN_MODE" = "1" ]; then
+    log_info "PLAN: would set hostname to $HOSTNAME"
+else
+    if [ "$(hostname)" = "$HOSTNAME" ]; then
+        log_info "Hostname already set: $HOSTNAME"
+    else
+        hostnamectl set-hostname "$HOSTNAME"
+        log_info "Hostname set: $HOSTNAME"
+    fi
+
+    # 2. /etc/hosts
+    short_host="${HOSTNAME%%.*}"
+    if grep -q "127.0.1.1.*${HOSTNAME}" /etc/hosts; then
+        log_info "/etc/hosts already contains $HOSTNAME entry"
+    else
+        # Replace the first 127.0.1.1 line if present, otherwise append
+        if grep -q '^127\.0\.1\.1' /etc/hosts; then
+            sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t${HOSTNAME} ${short_host}/" /etc/hosts
+        else
+            printf '127.0.1.1\t%s %s\n' "$HOSTNAME" "$short_host" >> /etc/hosts
+        fi
+        log_info "/etc/hosts updated"
+    fi
+fi
+
+# 3. Backup Netplan
+if [ ! -d /etc/netplan.backup ] && [ -d /etc/netplan ]; then
+    if [ "$PLAN_MODE" = "1" ]; then
+        log_info "PLAN: would back up /etc/netplan to /etc/netplan.backup"
+    else
+        cp -a /etc/netplan /etc/netplan.backup
+        log_info "Backed up /etc/netplan to /etc/netplan.backup"
+    fi
+else
+    log_info "/etc/netplan.backup already exists — skipping backup"
+fi
+
+# 4. Generate Netplan YAML from template
+target="/etc/netplan/99-toolkit.yaml"
+if [ "${USE_DHCP:-true}" = "true" ]; then
+    template="$TOOLKIT_ROOT/templates/netplan-dhcp.yaml"
+    log_info "Using DHCP Netplan template"
+    export NETWORK_INTERFACE
+else
+    template="$TOOLKIT_ROOT/templates/netplan-static.yaml"
+    log_info "Using static-IP Netplan template"
+    # Build YAML list for DNS servers
+    dns_yaml=""
+    for srv in $DNS_SERVERS; do
+        dns_yaml+="          - $srv"$'\n'
+    done
+    export NETWORK_INTERFACE IP_ADDRESS PREFIX_LENGTH GATEWAY
+    export DNS_SERVERS_YAML="${dns_yaml%$'\n'}"
+fi
+
+if [ "$PLAN_MODE" = "1" ]; then
+    log_info "PLAN: would render $template -> $target and run netplan apply"
+    exit 0
+fi
+
+tmp="$(mktemp)"
+envsubst < "$template" > "$tmp"
+chmod 0600 "$tmp"
+
+if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
+    log_info "Netplan config unchanged — skipping apply"
+    rm -f "$tmp"
+else
+    install -m 0600 "$tmp" "$target"
+    rm -f "$tmp"
+    log_info "Wrote $target"
+
+    # 5. Apply with auto-restore on connectivity failure
+    if ! netplan apply 2>&1; then
+        log_error "netplan apply failed — restoring backup"
+        rm -f "$target"
+        cp -a /etc/netplan.backup/. /etc/netplan/
+        netplan apply || true
+        exit 1
+    fi
+    sleep 3
+
+    target_ip="$GATEWAY"
+    [ "${USE_DHCP:-true}" = "true" ] && target_ip="8.8.8.8"
+    if ! timeout 30 bash -c "until ping -c1 -W1 $target_ip >/dev/null 2>&1; do sleep 1; done"; then
+        log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
+        rm -f "$target"
+        cp -a /etc/netplan.backup/. /etc/netplan/
+        netplan apply || true
+        exit 1
+    fi
+    log_info "Connectivity verified ($target_ip reachable)"
+fi
+
+# 6. Verification (informational)
+log_info "Active interface state:"
+ip -brief addr show "$NETWORK_INTERFACE" | sed 's/^/  /'
+log_info "Routing table:"
+ip -4 route | sed 's/^/  /'
+log_info "Listening sockets:"
+ss -tlnp 2>/dev/null | head -n 20 | sed 's/^/  /' || true
+
+log_info "IP configuration complete"
