@@ -27,6 +27,23 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
+@test "log_info works from a top-level script under set -u (regression)" {
+    # Modules source lib/common.sh and call log_info directly with `set -u`
+    # active. The call stack is too shallow for BASH_SOURCE[3], so the
+    # logger must tolerate that without tripping nounset.
+    local script="$BATS_TEST_TMPDIR/topcaller.sh"
+    cat >"$script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+source "$TOOLKIT_ROOT/lib/common.sh"
+log_info "from-top-level"
+EOF
+    chmod +x "$script"
+    run "$script"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"from-top-level"* ]]
+}
+
 @test "config_validate fails when required vars missing" {
     unset HOSTNAME EMAIL_TO DISK_DEVICE NETWORK_INTERFACE
     run config_validate
