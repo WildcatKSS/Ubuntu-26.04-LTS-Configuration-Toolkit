@@ -12,7 +12,7 @@ hardening, monitoring, mail relay and alerting.
 git clone https://github.com/WildcatKSS/Ubuntu-24.04-LTS-Configuration-Toolkit
 cd ubuntu-toolkit
 cp config/defaults.conf.example config/defaults.conf
-$EDITOR config/defaults.conf
+sudo vi config/defaults.conf
 
 sudo ./main.sh --list      # show modules and dependency graph
 sudo ./main.sh --plan      # read-only audit (no changes)
