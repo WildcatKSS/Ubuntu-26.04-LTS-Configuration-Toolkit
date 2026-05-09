@@ -9,7 +9,7 @@ hardening, monitoring, mail relay and alerting.
 ## Quickstart
 
 ```bash
-git clone <this-repo> ubuntu-toolkit
+git clone https://github.com/WildcatKSS/Ubuntu-24.04-LTS-Configuration-Toolkit
 cd ubuntu-toolkit
 cp config/defaults.conf.example config/defaults.conf
 $EDITOR config/defaults.conf
