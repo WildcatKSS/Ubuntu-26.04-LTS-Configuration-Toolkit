@@ -49,10 +49,86 @@ case "$arch" in
 esac
 
 # 3. Internet connectivity (runtime precondition)
-if ping -c1 -W3 archive.ubuntu.com >/dev/null 2>&1; then
-    log_info "Internet connectivity ok"
-else
-    preflight_runtime_fail "Cannot reach archive.ubuntu.com — apt will fail"
+# We probe HTTP instead of ICMP because many networks block ping while still
+# allowing apt to fetch packages, and we try every mirror configured in
+# /etc/apt rather than a single canonical hostname — a transient DNS failure
+# for archive.ubuntu.com must not block a run whose mirror is, say,
+# nl.archive.ubuntu.com.
+preflight_http_reachable() {
+    local url="$1"
+    local code=""
+    if command -v curl >/dev/null 2>&1; then
+        code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null)" || true
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q --spider --timeout=5 --tries=1 "$url" 2>/dev/null && code="200" || code="000"
+    else
+        return 2
+    fi
+    [ -n "$code" ] && [ "$code" != "000" ]
+}
+
+preflight_apt_mirror_urls() {
+    local f line word
+    local hosts=()
+
+    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+        [ -f "$f" ] || continue
+        while read -r line; do
+            case "$line" in
+                "deb "*|"deb-src "*) ;;
+                *) continue ;;
+            esac
+            for word in $line; do
+                case "$word" in
+                    http://*|https://*) hosts+=("$word"); break ;;
+                esac
+            done
+        done < "$f"
+    done
+
+    for f in /etc/apt/sources.list.d/*.sources; do
+        [ -f "$f" ] || continue
+        while read -r line; do
+            case "$line" in
+                "URIs:"*)
+                    for word in ${line#URIs:}; do
+                        case "$word" in
+                            http://*|https://*) hosts+=("$word") ;;
+                        esac
+                    done
+                    ;;
+            esac
+        done < "$f"
+    done
+
+    if [ "${#hosts[@]}" -eq 0 ]; then
+        printf '%s\n' \
+            "http://archive.ubuntu.com" \
+            "http://security.ubuntu.com"
+    else
+        printf '%s\n' "${hosts[@]}" \
+            | awk -F/ 'NF>=3 {print $1"//"$3}' \
+            | sort -u
+    fi
+}
+
+connectivity_ok=0
+connectivity_tried=()
+while IFS= read -r url; do
+    connectivity_tried+=("$url")
+    if preflight_http_reachable "$url"; then
+        log_info "Internet connectivity ok ($url reachable)"
+        connectivity_ok=1
+        break
+    fi
+done < <(preflight_apt_mirror_urls)
+
+if [ "$connectivity_ok" -eq 0 ]; then
+    if [ "${#connectivity_tried[@]}" -eq 0 ]; then
+        preflight_runtime_fail "Cannot test connectivity (no curl or wget available)"
+    else
+        preflight_runtime_fail "Cannot reach any apt mirror over HTTP (tried: ${connectivity_tried[*]}) — apt will fail"
+    fi
 fi
 
 # 4. APT lock check (runtime precondition)

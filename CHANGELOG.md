@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Preflight no longer fails on networks that block ICMP or that have a
+  transient DNS issue for `archive.ubuntu.com`. The connectivity check now
+  probes apt's actually configured mirrors (parsed from `/etc/apt`) over
+  HTTP, falling back to canonical Ubuntu hosts. Any successful HTTP response
+  passes the check.
+
 ### Added
 - Initial release of the Ubuntu 24.04 LTS Configuration Toolkit.
   - 11 modules covering preflight, base config, LVM partitions, IP/Netplan,
