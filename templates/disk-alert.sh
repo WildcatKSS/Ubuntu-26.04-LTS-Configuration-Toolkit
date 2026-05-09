@@ -10,6 +10,7 @@
 set -u
 
 CONF="/etc/toolkit-setup/disk-alert.env"
+# shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF"
 
 EMAIL_TO="${EMAIL_TO:-root}"

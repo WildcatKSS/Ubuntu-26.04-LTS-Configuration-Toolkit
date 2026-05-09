@@ -7,6 +7,7 @@
 set -u
 
 CONF="/etc/toolkit-setup/daily-report.env"
+# shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF"
 
 EMAIL_TO="${EMAIL_TO:-root}"
