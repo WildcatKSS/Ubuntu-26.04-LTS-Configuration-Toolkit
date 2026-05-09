@@ -9,8 +9,8 @@ config_load() {
         log_error "Config file not found: $path"
         return 1
     fi
-    # shellcheck disable=SC1090
     set -a
+    # shellcheck disable=SC1090
     source "$path"
     set +a
     log_info "Loaded config from $path"
