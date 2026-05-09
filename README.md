@@ -4,10 +4,6 @@ A modular bash toolkit that takes a freshly installed Ubuntu 24.04 LTS system
 and configures it from bare to production-ready in one run: partitions, network,
 hardening, monitoring, mail relay and alerting.
 
-The toolkit is **idempotent** (safe to re-run), **resumable** (state survives
-reboot after script 02), and supports both **interactive** and **unattended**
-modes.
-
 ---
 
 ## Quickstart
