@@ -182,11 +182,18 @@ sudo -E ./main.sh
 | Reboot mid-run, state lost (in `/tmp`) | `sudo ./main.sh --force` |
 | Reboot mid-run, state preserved (in `/var/log`) | `sudo ./main.sh --resume` |
 | `--list` shows wrong dependency | Inspect the `# DEPENDS:` header in the module |
+| Preflight: `Cannot reach any apt mirror over HTTP` | Mirror outage (e.g. the [May 2026 Canonical DDoS](docs/incidents/2026-05-canonical-ddos.md)) — switch mirror or wait |
 
 Inspect the log for ERROR lines:
 ```bash
 grep ERROR /var/log/toolkit-setup.log /tmp/toolkit-setup/toolkit-setup.log 2>/dev/null
 ```
+
+### Known incidents
+
+- [May 2026 Canonical DDoS](docs/incidents/2026-05-canonical-ddos.md) —
+  `archive.ubuntu.com` / `security.ubuntu.com` unreachable; preflight fails
+  fast. Includes mirror-swap and HTTPS workarounds.
 
 ---
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `docs/incidents/2026-05-canonical-ddos.md` — operator runbook for the May
+  2026 DDoS attack on Canonical infrastructure. Describes how the outage
+  surfaces in `00-preflight` and three workarounds (regional mirror swap,
+  http→https on the existing mirror, wait-and-retry). Linked from the README
+  troubleshooting table.
+
 ### Fixed
 - Preflight no longer fails on networks that block ICMP or that have a
   transient DNS issue for `archive.ubuntu.com`. The connectivity check now
