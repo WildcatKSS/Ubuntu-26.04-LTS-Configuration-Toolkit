@@ -12,6 +12,21 @@ source "$TOOLKIT_ROOT/lib/common.sh"
 
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 errors=0
+plan_warnings=0
+
+# Runtime preconditions (network, apt lock, free disk) only matter for an
+# actual run. In plan mode they are reported as warnings so the read-only
+# audit can complete without touching the system.
+preflight_runtime_fail() {
+    local message="$1"
+    if [ "$PLAN_MODE" = "1" ]; then
+        log_warn "PLAN: would fail: $message"
+        plan_warnings=$((plan_warnings + 1))
+    else
+        log_error "$message"
+        errors=$((errors + 1))
+    fi
+}
 
 # 1. OS verification
 if [ -f /etc/os-release ]; then
@@ -33,27 +48,24 @@ case "$arch" in
     *) log_error "Unsupported architecture: $arch"; errors=$((errors + 1)) ;;
 esac
 
-# 3. Internet connectivity
+# 3. Internet connectivity (runtime precondition)
 if ping -c1 -W3 archive.ubuntu.com >/dev/null 2>&1; then
     log_info "Internet connectivity ok"
 else
-    log_error "Cannot reach archive.ubuntu.com — apt will fail"
-    errors=$((errors + 1))
+    preflight_runtime_fail "Cannot reach archive.ubuntu.com — apt will fail"
 fi
 
-# 4. APT lock check
+# 4. APT lock check (runtime precondition)
 if fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; then
-    log_error "Another process holds the apt lock (/var/lib/dpkg/lock-frontend)"
-    errors=$((errors + 1))
+    preflight_runtime_fail "Another process holds the apt lock (/var/lib/dpkg/lock-frontend)"
 else
     log_info "APT lock ok"
 fi
 
-# 5. Disk space (root partition >=5 GB free)
+# 5. Disk space (root partition >=5 GB free) — runtime precondition
 free_gb="$(df -BG --output=avail / | awk 'NR==2 {gsub("G",""); print $1}')"
 if [ -n "$free_gb" ] && [ "$free_gb" -lt 5 ]; then
-    log_error "Root partition has only ${free_gb}GB free (need >=5GB)"
-    errors=$((errors + 1))
+    preflight_runtime_fail "Root partition has only ${free_gb}GB free (need >=5GB)"
 else
     log_info "Disk space ok: ${free_gb}GB free on /"
 fi
@@ -77,7 +89,11 @@ if [ "$errors" -gt 0 ]; then
 fi
 
 if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: preflight checks all passed"
+    if [ "$plan_warnings" -gt 0 ]; then
+        log_warn "PLAN: preflight passed with $plan_warnings runtime warning(s) — fix before a real run"
+    else
+        log_info "PLAN: preflight checks all passed"
+    fi
 fi
 
 log_info "Preflight checks passed"
