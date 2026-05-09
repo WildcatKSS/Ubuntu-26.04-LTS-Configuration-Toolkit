@@ -77,7 +77,7 @@ setup() {
         names[$(basename "$f" .sh)]=1
     done
     for f in "$TOOLKIT_ROOT"/scripts/[0-9]*.sh; do
-        deps="$(grep '^# DEPENDS:' "$f" | sed 's/^# DEPENDS: //')"
+        deps="$(grep '^# DEPENDS:' "$f" | sed 's/^# DEPENDS:[[:space:]]*//')"
         [ -z "$deps" ] && continue
         IFS=',' read -ra arr <<< "$deps"
         for d in "${arr[@]}"; do

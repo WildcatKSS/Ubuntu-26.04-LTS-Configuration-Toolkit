@@ -259,7 +259,8 @@ run_module() {
     run_hook "$TOOLKIT_ROOT/scripts/hooks/pre-${short}.sh"
 
     log_info "===== START $short ====="
-    local start_ts="$(date '+%Y-%m-%d %H:%M:%S')"
+    local start_ts
+    start_ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local rc=0
     local env_vars=("TOOLKIT_ROOT=$TOOLKIT_ROOT")
     [ "$FLAG_PLAN" -eq 1 ] && env_vars+=("TOOLKIT_PLAN_MODE=1")
