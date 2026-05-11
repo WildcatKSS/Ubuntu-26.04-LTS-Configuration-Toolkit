@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# main.sh — Ubuntu 24.04 LTS Configuration Toolkit
+# main.sh — Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # Auto-discovers scripts/*.sh, validates dependency DAG, and executes modules
 # in alphabetical order. See README.md for full documentation.
@@ -21,11 +21,10 @@ export TOOLKIT_ROOT
 source "$TOOLKIT_ROOT/lib/common.sh"
 
 # Path conventions
-TOOLKIT_TEMP_DIR="${TOOLKIT_TEMP_DIR:-/tmp/toolkit-setup}"
 TOOLKIT_PERSISTENT_DIR="${TOOLKIT_PERSISTENT_DIR:-/var/log/toolkit-setup}"
-TOOLKIT_LOG_FILE="${TOOLKIT_LOG_FILE:-$TOOLKIT_TEMP_DIR/toolkit-setup.log}"
+TOOLKIT_LOG_FILE="${TOOLKIT_LOG_FILE:-$TOOLKIT_PERSISTENT_DIR/toolkit-setup.log}"
 TOOLKIT_LOCK="/tmp/.toolkit-lock"
-export TOOLKIT_TEMP_DIR TOOLKIT_PERSISTENT_DIR TOOLKIT_LOG_FILE
+export TOOLKIT_PERSISTENT_DIR TOOLKIT_LOG_FILE
 
 # ---------------------------------------------------------------------------
 # Flags
@@ -279,10 +278,6 @@ run_module() {
 
     run_hook "$TOOLKIT_ROOT/scripts/hooks/post-${short}.sh"
 
-    # State transition: after script 02 (partitions), promote state to /var/log
-    if [ "$short" = "02-partitions" ] && [ -d /var/log ]; then
-        state_promote || true
-    fi
     return 0
 }
 
@@ -331,9 +326,9 @@ main() {
         exit 3
     fi
 
-    # Prepare temp log dir + state file
-    mkdir -p "$TOOLKIT_TEMP_DIR"
-    log_check_diskspace "$TOOLKIT_TEMP_DIR" 100 || true
+    # Prepare persistent log dir + state file
+    mkdir -p "$TOOLKIT_PERSISTENT_DIR"
+    log_check_diskspace "$TOOLKIT_PERSISTENT_DIR" 100 || true
 
     if [ "$FLAG_DRY_RUN" -eq 0 ] && [ "$FLAG_PLAN" -eq 0 ]; then
         system_check_root || exit 1
@@ -350,21 +345,11 @@ main() {
 
     state_init
 
-    # Warn if temp-only state exists from a prior run that crashed before script 02
-    if [ ! -f "$TOOLKIT_PERSISTENT_DIR/.state" ] && [ -s "$TOOLKIT_TEMP_DIR/.state" ] && [ "$FLAG_RESUME" -eq 1 ]; then
-        log_warn "Resuming from temp state (previous run did not reach script 02 mount)"
-    fi
-
     # Run modules
     local path
     for path in "${MODULE_PATHS[@]}"; do
         run_module "$path" || exit $?
     done
-
-    # After script 07, migrate logs to persistent location
-    if [ -d "$TOOLKIT_PERSISTENT_DIR" ]; then
-        log_migrate "$TOOLKIT_LOG_FILE" "$TOOLKIT_PERSISTENT_DIR/toolkit-setup.log" || true
-    fi
 
     echo
     log_info "All modules completed. Summary:"

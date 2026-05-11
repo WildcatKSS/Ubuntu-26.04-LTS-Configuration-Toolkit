@@ -9,6 +9,8 @@
 #   - main.sh --list / --plan / --dry-run runs without errors when given a
 #     valid example config
 #
+# State is recorded in /var/log/toolkit-setup/.state for the entire run.
+#
 # True end-to-end idempotency is verified manually on a VM (see README.md).
 
 setup() {

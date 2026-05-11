@@ -38,10 +38,10 @@ fi
 
 echo
 echo "=================================================="
-echo "  Ubuntu 24.04 toolkit setup complete"
+echo "  Ubuntu Server 26.04 toolkit setup complete"
 echo "=================================================="
 echo "  State file: $(state_active_path)"
-echo "  Log file:   ${TOOLKIT_LOG_FILE:-/tmp/toolkit-setup/toolkit-setup.log}"
+echo "  Log file:   ${TOOLKIT_LOG_FILE:-/var/log/toolkit-setup/toolkit-setup.log}"
 echo
 echo "Completed modules:"
 state_summary

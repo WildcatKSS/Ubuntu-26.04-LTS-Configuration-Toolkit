@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # MODULE: 03-ip-config
 # DESC: Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore on failure
-# DEPENDS: 02-partitions
+# DEPENDS: 01-base-config
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MODULE: 00-preflight
-# DESC: Verify Ubuntu 24.04 LTS, network, disk space, and apt locks before any changes
+# DESC: Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks before any changes
 # DEPENDS:
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
@@ -30,11 +30,11 @@ preflight_runtime_fail() {
 
 # 1. OS verification
 if [ -f /etc/os-release ]; then
-    if ! grep -q 'VERSION_ID="24\.04"' /etc/os-release || ! grep -q '^ID=ubuntu' /etc/os-release; then
-        log_error "This system is not Ubuntu 24.04 LTS"
+    if ! grep -q 'VERSION_ID="26\.04"' /etc/os-release || ! grep -q '^ID=ubuntu' /etc/os-release; then
+        log_error "This system is not Ubuntu Server 26.04 LTS"
         errors=$((errors + 1))
     else
-        log_info "OS check ok: Ubuntu 24.04"
+        log_info "OS check ok: Ubuntu Server 26.04"
     fi
 else
     log_error "/etc/os-release missing"

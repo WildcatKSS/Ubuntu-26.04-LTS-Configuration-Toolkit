@@ -1,29 +1,22 @@
 #!/usr/bin/env bash
 # lib/state.sh — Persistent module state tracking
 #
-# State file location is dynamic:
-#   - Before script 02 mounts /var/log: $TOOLKIT_TEMP_DIR/.state
-#   - After script 02:                   $TOOLKIT_PERSISTENT_DIR/.state
-# state_active_path resolves the active path on each call.
+# State file lives at $TOOLKIT_PERSISTENT_DIR/.state (default
+# /var/log/toolkit-setup/.state) for the entire run.
 
-: "${TOOLKIT_TEMP_DIR:=/tmp/toolkit-setup}"
 : "${TOOLKIT_PERSISTENT_DIR:=/var/log/toolkit-setup}"
 
 # state_active_path
-# Echoes the path of the active state file.
+# Echoes the path of the state file.
 state_active_path() {
-    if [ -f "$TOOLKIT_PERSISTENT_DIR/.state" ]; then
-        echo "$TOOLKIT_PERSISTENT_DIR/.state"
-    else
-        echo "$TOOLKIT_TEMP_DIR/.state"
-    fi
+    echo "$TOOLKIT_PERSISTENT_DIR/.state"
 }
 
 # state_init
-# Ensures the temp state file exists.
+# Ensures the state file exists.
 state_init() {
-    mkdir -p "$TOOLKIT_TEMP_DIR"
-    touch "$TOOLKIT_TEMP_DIR/.state"
+    mkdir -p "$TOOLKIT_PERSISTENT_DIR"
+    touch "$TOOLKIT_PERSISTENT_DIR/.state"
 }
 
 # state_mark_complete <module-name>
@@ -55,24 +48,6 @@ state_clear() {
     [ -f "$path" ] || return 0
     grep -v "^${module}\b" "$path" > "${path}.tmp" 2>/dev/null || true
     mv "${path}.tmp" "$path"
-}
-
-# state_promote
-# Migrates the temp state file to its persistent location after script 02.
-# Safe to call multiple times.
-state_promote() {
-    local src="$TOOLKIT_TEMP_DIR/.state"
-    local dst="$TOOLKIT_PERSISTENT_DIR/.state"
-    if [ -f "$dst" ]; then
-        return 0
-    fi
-    if [ ! -f "$src" ]; then
-        log_warn "Cannot promote state: no temp state file at $src"
-        return 1
-    fi
-    mkdir -p "$TOOLKIT_PERSISTENT_DIR"
-    mv "$src" "$dst"
-    log_info "State migrated to persistent location: $dst"
 }
 
 # state_summary
