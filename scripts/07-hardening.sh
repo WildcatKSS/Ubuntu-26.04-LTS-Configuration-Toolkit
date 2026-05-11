@@ -35,7 +35,7 @@ else
         complain="$(aa-status 2>/dev/null | awk '/profiles are in complain mode/{print $1; exit}')"
         log_info "AppArmor enabled: ${enforced:-?} enforce, ${complain:-?} complain"
     else
-        log_error "AppArmor is not enabled — Ubuntu 24.04 should ship with it active"
+        log_error "AppArmor is not enabled — Ubuntu Server 26.04 should ship with it active"
         exit 1
     fi
     system_service_enable_start apparmor || true

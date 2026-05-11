@@ -1,10 +1,8 @@
-# Ubuntu 24.04 LTS Configuration Toolkit — defaults
+# Ubuntu Server 26.04 LTS Configuration Toolkit — defaults
 #
 # Copy this file to config/defaults.conf and edit values.
 # Variables prompted interactively (or via env var) — NOT in this file:
 #   ADMIN_USER, ADMIN_PASSWORD       (script 01)
-#   SWAP_ENCRYPT                     (script 02)
-#   SKIP_PARTITIONS                  (script 02 — set as env var to skip)
 
 # ---------------------------------------------------------------------------
 # Network
@@ -34,11 +32,6 @@ FALLBACK_NTP="time.cloudflare.com time.google.com"
 
 TIMEZONE="Europe/Amsterdam"
 LOCALE="nl_NL.UTF-8"
-
-# ---------------------------------------------------------------------------
-# Partitions / LVM
-# ---------------------------------------------------------------------------
-DISK_DEVICE="/dev/sda"            # disk on which LVM is set up
 
 # ---------------------------------------------------------------------------
 # Email / SMTP relay

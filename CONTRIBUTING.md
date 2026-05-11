@@ -15,7 +15,7 @@ main.sh
   ├── parses each module's metadata header
   ├── validates the dependency DAG (no cycles, no missing targets)
   ├── runs each module after acquiring /tmp/.toolkit-lock
-  └── records progress in a state file (temp -> persistent after script 02)
+  └── records progress in /var/log/toolkit-setup/.state
 
 lib/common.sh sources:
   - log.sh    : log_info / log_warn / log_error, log_check_diskspace, log_migrate
@@ -24,7 +24,7 @@ lib/common.sh sources:
                 system_service_enable_start, system_service_mask, system_file_install
   - pkg.sh    : pkg_install, pkg_purge, pkg_update (idempotent apt wrappers)
   - state.sh  : state_init, state_mark_complete, state_is_complete,
-                state_promote, state_summary
+                state_summary
 ```
 
 ---
@@ -107,16 +107,9 @@ see the README troubleshooting section for the procedure.
 
 ## State persistence
 
-The state file location is dynamic:
-
-| When | Location | Survives reboot? |
-|---|---|---|
-| Scripts 0–2 (before `mount -a`) | `/tmp/toolkit-setup/.state` | no |
-| After script 02 promotes it | `/var/log/toolkit-setup/.state` | yes |
-
-If your module runs **after** script 02 and you need to read or write state,
-just call `state_mark_complete` / `state_is_complete` — the helpers resolve
-the active path automatically (`state_active_path`).
+State lives at `/var/log/toolkit-setup/.state` for the entire run and
+survives reboots. Call `state_mark_complete` / `state_is_complete` to
+read/write it; never hardcode the path.
 
 ---
 

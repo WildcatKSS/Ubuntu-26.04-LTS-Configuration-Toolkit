@@ -41,7 +41,7 @@ _config_is_valid_hostname() {
 config_validate() {
     local errors=0
 
-    for var in HOSTNAME EMAIL_TO DISK_DEVICE NETWORK_INTERFACE; do
+    for var in HOSTNAME EMAIL_TO NETWORK_INTERFACE; do
         if [ -z "${!var:-}" ]; then
             log_error "Required config variable not set: $var"
             errors=$((errors + 1))
@@ -73,10 +73,6 @@ config_validate() {
             log_error "Invalid GATEWAY: $GATEWAY"
             errors=$((errors + 1))
         fi
-    fi
-
-    if [ -n "${DISK_DEVICE:-}" ] && [ ! -b "$DISK_DEVICE" ] && [ "${SKIP_PARTITIONS:-false}" != "true" ]; then
-        log_warn "DISK_DEVICE is not a block device on this system: $DISK_DEVICE (ok during dry-run)"
     fi
 
     if [ "$errors" -gt 0 ]; then

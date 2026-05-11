@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Retargeted toolkit at **Ubuntu Server 26.04 LTS**. The preflight OS check
+  now requires `VERSION_ID="26.04"`; runs on 24.04 will be refused. CI
+  workflow runs on `ubuntu-26.04`.
+
+### Removed
+- **Partitioning step**: `scripts/02-partitions.sh` (LVM `vg0` creation) is
+  gone. The toolkit now assumes the disk layout is set by the installer and
+  only configures software/system concerns. Removes `DISK_DEVICE`,
+  `SKIP_PARTITIONS`, and `SWAP_ENCRYPT` configuration; removes encrypted-swap
+  logic from `06-packages.sh`.
+- `state_promote` helper and the temp -> persistent state-file migration.
+  State is now written directly to `/var/log/toolkit-setup/.state` for the
+  whole run. Operators upgrading from a previous run should re-run with
+  `--force`; old `/tmp/toolkit-setup/.state` data is not migrated.
+
 ### Fixed
 - Preflight no longer fails on networks that block ICMP or that have a
   transient DNS issue for `archive.ubuntu.com`. The connectivity check now

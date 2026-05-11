@@ -4,10 +4,9 @@
 setup() {
     TOOLKIT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
     export TOOLKIT_ROOT
-    export TOOLKIT_TEMP_DIR="$BATS_TEST_TMPDIR/toolkit"
     export TOOLKIT_PERSISTENT_DIR="$BATS_TEST_TMPDIR/persistent"
     export TOOLKIT_LOG_FILE="$BATS_TEST_TMPDIR/test.log"
-    mkdir -p "$TOOLKIT_TEMP_DIR" "$TOOLKIT_PERSISTENT_DIR"
+    mkdir -p "$TOOLKIT_PERSISTENT_DIR"
     # shellcheck disable=SC1091
     source "$TOOLKIT_ROOT/lib/common.sh"
 }
@@ -45,7 +44,7 @@ EOF
 }
 
 @test "config_validate fails when required vars missing" {
-    unset HOSTNAME EMAIL_TO DISK_DEVICE NETWORK_INTERFACE
+    unset HOSTNAME EMAIL_TO NETWORK_INTERFACE
     run config_validate
     [ "$status" -ne 0 ]
 }
@@ -53,21 +52,20 @@ EOF
 @test "config_validate passes with required vars set (DHCP)" {
     export HOSTNAME="test.local"
     export EMAIL_TO="a@b.com"
-    export DISK_DEVICE="/dev/null"
     export NETWORK_INTERFACE="lo"
     export USE_DHCP="true"
-    SKIP_PARTITIONS=true run config_validate
+    run config_validate
     [ "$status" -eq 0 ]
 }
 
 @test "config_validate fails on invalid email" {
-    export HOSTNAME="t.local" EMAIL_TO="not-an-email" DISK_DEVICE="/dev/null" NETWORK_INTERFACE="lo" USE_DHCP="true"
+    export HOSTNAME="t.local" EMAIL_TO="not-an-email" NETWORK_INTERFACE="lo" USE_DHCP="true"
     run config_validate
     [ "$status" -ne 0 ]
 }
 
 @test "config_validate fails on invalid IP when static" {
-    export HOSTNAME="t.local" EMAIL_TO="a@b.com" DISK_DEVICE="/dev/null" NETWORK_INTERFACE="lo"
+    export HOSTNAME="t.local" EMAIL_TO="a@b.com" NETWORK_INTERFACE="lo"
     export USE_DHCP="false" IP_ADDRESS="999.0.0.1" PREFIX_LENGTH="24" GATEWAY="1.2.3.4" DNS_SERVERS="1.1.1.1"
     run config_validate
     [ "$status" -ne 0 ]
@@ -85,7 +83,7 @@ EOF
 
 @test "state_init creates state file" {
     state_init
-    [ -f "$TOOLKIT_TEMP_DIR/.state" ]
+    [ -f "$TOOLKIT_PERSISTENT_DIR/.state" ]
 }
 
 @test "state_mark_complete + state_is_complete round trip" {
@@ -99,15 +97,6 @@ EOF
     state_init
     run state_is_complete "never-ran"
     [ "$status" -ne 0 ]
-}
-
-@test "state_promote moves temp state to persistent" {
-    state_init
-    state_mark_complete "m1"
-    state_promote
-    [ -f "$TOOLKIT_PERSISTENT_DIR/.state" ]
-    [ ! -f "$TOOLKIT_TEMP_DIR/.state" ]
-    grep -q "^m1" "$TOOLKIT_PERSISTENT_DIR/.state"
 }
 
 @test "state_summary on empty state" {

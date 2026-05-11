@@ -1,8 +1,8 @@
-# Ubuntu 24.04 LTS Configuration Toolkit
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 
-A modular bash toolkit that takes a freshly installed Ubuntu 24.04 LTS system
-and configures it from bare to production-ready in one run: partitions, network,
-hardening, monitoring, mail relay and alerting.
+A modular bash toolkit that takes a freshly installed Ubuntu Server 26.04 LTS system
+and configures it from bare to production-ready in one run: network, hardening,
+monitoring, mail relay and alerting.
 
 ---
 
@@ -10,8 +10,8 @@ hardening, monitoring, mail relay and alerting.
 
 Install
 ```bash
-git clone https://github.com/WildcatKSS/Ubuntu-24.04-LTS-Configuration-Toolkit
-cd Ubuntu-24.04-LTS-Configuration-Toolkit
+git clone https://github.com/WildcatKSS/Ubuntu-26.04-LTS-Configuration-Toolkit
+cd Ubuntu-26.04-LTS-Configuration-Toolkit
 cp config/defaults.conf.example config/defaults.conf
 sudo vi config/defaults.conf
 
@@ -41,7 +41,6 @@ All variables live in `config/defaults.conf` (gitignored — copy from
 | `HOSTNAME` | FQDN for the host |
 | `TIMEZONE`, `LOCALE` | Locale settings |
 | `NTP_SERVERS`, `FALLBACK_NTP` | chrony servers |
-| `DISK_DEVICE` | Target disk for LVM creation (e.g. `/dev/sda`) |
 | `EMAIL_TO`, `SMTP_RELAY_HOST`, `SMTP_RELAY_PORT` | Mail relay |
 | `DISK_ALERT_THRESHOLD` | Disk-usage % that triggers an alert |
 
@@ -51,8 +50,6 @@ interactively (or supplied via env var for unattended runs):
 | Env var | Used by | Effect |
 |---|---|---|
 | `ADMIN_USER`, `ADMIN_PASSWORD` | `01-base-config` | Create sudo user without prompting |
-| `SWAP_ENCRYPT` (`true`/`false`) | `02-partitions` | Skip the encryption prompt |
-| `SKIP_PARTITIONS=true` | `02-partitions` | Skip partition creation entirely |
 | `TOOLKIT_NONINTERACTIVE=1` | All | Use defaults for any interactive prompt |
 
 ---
@@ -101,13 +98,12 @@ declares its metadata in a header:
 
 | # | Script | What it does |
 |---|---|---|
-| 00 | `00-preflight.sh` | OS=Ubuntu 24.04, internet, disk space, apt locks |
+| 00 | `00-preflight.sh` | OS=Ubuntu Server 26.04, internet, disk space, apt locks |
 | 01 | `01-base-config.sh` | apt upgrade, sudo user, unattended-upgrades |
-| 02 | `02-partitions.sh` | LVM `vg0` with hardened mount options (`nodev,nosuid,noexec`) |
 | 03 | `03-ip-config.sh` | Hostname, Netplan, connectivity check + auto-restore |
 | 04 | `04-network-hardening.sh` | cloud-init off, NetworkManager off, UFW (SSH-only), IPv6 off, fail2ban |
 | 05 | `05-system-settings.sh` | Timezone, locale, chrony (replaces systemd-timesyncd) |
-| 06 | `06-packages.sh` | Encrypted swap (if chosen) + standard tools |
+| 06 | `06-packages.sh` | Standard editor / monitoring / network tools |
 | 07 | `07-hardening.sh` | sysctl, AppArmor verify, auditd rules |
 | 08 | `08-monitoring.sh` | sysstat, rsyslog rules, logrotate |
 | 09 | `09-mail-alerting.sh` | Postfix relay, daily report cron, disk/service alert cron |
@@ -129,23 +125,20 @@ stop the run.
 
 ## State and logging
 
-The toolkit writes a state file recording which modules completed.
-Its location moves once the `/var/log` LVM partition is mounted:
+The toolkit writes a state file recording which modules completed:
 
-| Phase | State file | Survives reboot? |
-|---|---|---|
-| Scripts 0 → 2 (before mount) | `/tmp/toolkit-setup/.state` | no |
-| After script 02 (`mount -a`) | `/var/log/toolkit-setup/.state` | yes |
+| State file | Survives reboot? |
+|---|---|
+| `/var/log/toolkit-setup/.state` | yes |
 
 Log file:
 
-| Phase | Log file |
-|---|---|
-| During execution | `/tmp/toolkit-setup/toolkit-setup.log` |
-| After script 07 | `/var/log/toolkit-setup.log` (consolidated) |
+| Log file |
+|---|
+| `/var/log/toolkit-setup/toolkit-setup.log` |
 
-If a previous run failed before script 02 and the system rebooted, `--resume`
-will warn that the temp state was lost — re-run with `--force` to start over.
+After a failed run, use `sudo ./main.sh --resume` to pick up where you left off,
+or `sudo ./main.sh --force` to re-run everything from scratch.
 
 ---
 
@@ -154,14 +147,9 @@ will warn that the temp state was lost — re-run with `--force` to start over.
 ```bash
 ADMIN_USER=sysadmin \
 ADMIN_PASSWORD='change-me-please' \
-SWAP_ENCRYPT=true \
 TOOLKIT_NONINTERACTIVE=1 \
 sudo -E ./main.sh
 ```
-
-For partition creation in unattended mode, set `SKIP_PARTITIONS=true` if the
-disk is already partitioned by your installer. The toolkit refuses to silently
-overwrite partitions.
 
 Recommended secure pattern (avoids passwords in shell history):
 
@@ -179,13 +167,12 @@ sudo -E ./main.sh
 |---|---|
 | Network broken after `03-ip-config` | `cp -a /etc/netplan.backup/. /etc/netplan/ && netplan apply` |
 | One module failed | `sudo ./main.sh --retry=<module-name>` |
-| Reboot mid-run, state lost (in `/tmp`) | `sudo ./main.sh --force` |
-| Reboot mid-run, state preserved (in `/var/log`) | `sudo ./main.sh --resume` |
+| Need to re-run from scratch | `sudo ./main.sh --force` |
 | `--list` shows wrong dependency | Inspect the `# DEPENDS:` header in the module |
 
 Inspect the log for ERROR lines:
 ```bash
-grep ERROR /var/log/toolkit-setup.log /tmp/toolkit-setup/toolkit-setup.log 2>/dev/null
+grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 ```
 
 ---
@@ -202,7 +189,7 @@ shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
 bats tests/
 ```
 
-End-to-end testing must happen on a real (or virtual) Ubuntu 24.04 host —
+End-to-end testing must happen on a real (or virtual) Ubuntu Server 26.04 host —
 see the verification steps in the project plan for the full procedure.
 
 ---

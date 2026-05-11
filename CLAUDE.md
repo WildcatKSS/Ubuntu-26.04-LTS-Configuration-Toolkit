@@ -4,8 +4,8 @@ This file orients Claude (or any AI agent) when working in this repository.
 
 ## What this repo is
 
-A modular bash toolkit that configures a fresh Ubuntu 24.04 LTS system end-to-end:
-partitions, network, hardening, monitoring, mail. One master script
+A modular bash toolkit that configures a fresh Ubuntu Server 26.04 LTS system end-to-end:
+network, hardening, monitoring, mail. One master script
 (`main.sh`) auto-discovers numbered modules under `scripts/` and runs them in
 alphabetical order, validating dependencies along the way.
 
@@ -30,7 +30,7 @@ tests/                     — BATS unit + structural tests
   # DESC: short description
   # DEPENDS: 03-ip-config            (comma-separated short names; empty for none)
   # IDEMPOTENT: yes                  (must be yes — enforced by tests)
-  # DESTRUCTIVE: no                  (yes only for partition/disk operations)
+  # DESTRUCTIVE: no                  (yes only for irreversible disk/system operations)
   ```
 - **Sourcing pattern** at the top of every module:
   ```bash
@@ -50,15 +50,10 @@ tests/                     — BATS unit + structural tests
   (e.g. `mycompany_*`) to avoid colliding with `log_*`, `pkg_*`, `system_*`,
   `state_*`, `config_*`.
 
-## State file (read this carefully)
+## State file
 
-The state file location moves at runtime:
-
-- Before script 02 finishes (`mount -a`): `/tmp/toolkit-setup/.state`.
-- After script 02 promotes it: `/var/log/toolkit-setup/.state`.
-- `lib/state.sh::state_active_path` resolves the correct path automatically.
-- Never write a hardcoded path — call the helpers (`state_mark_complete`,
-  `state_is_complete`).
+State lives at `/var/log/toolkit-setup/.state` for the entire run. Never write
+a hardcoded path — call the helpers (`state_mark_complete`, `state_is_complete`).
 
 ## Critical constraints
 
@@ -108,7 +103,6 @@ pkg_purge network-manager            # only purges if installed
 state_init
 state_mark_complete "07-hardening"
 state_is_complete  "07-hardening"
-state_promote                        # /tmp -> /var/log (called by main after 02)
 state_summary
 ```
 
