@@ -28,9 +28,10 @@ template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
 if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would render $template -> $target"
 else
-    export HOSTNAME SMTP_RELAY_HOST SMTP_RELAY_PORT
+    MAIL_DOMAIN="${HOSTNAME#*.}"
+    export HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT
     tmp="$(mktemp)"
-    envsubst < "$template" > "$tmp"
+    envsubst '${HOSTNAME} ${MAIL_DOMAIN} ${SMTP_RELAY_HOST} ${SMTP_RELAY_PORT}' < "$template" > "$tmp"
     if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
         log_info "Postfix main.cf unchanged"
         rm -f "$tmp"
@@ -38,7 +39,7 @@ else
         [ -f "$target" ] && [ ! -f "${target}.toolkit.bak" ] && cp "$target" "${target}.toolkit.bak"
         install -m 0644 "$tmp" "$target"
         rm -f "$tmp"
-        systemctl restart postfix 2>/dev/null || log_warn "postfix restart failed"
+        systemctl restart postfix || log_warn "postfix restart failed"
     fi
     system_service_enable_start postfix || true
 fi
