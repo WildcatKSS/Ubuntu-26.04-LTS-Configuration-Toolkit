@@ -23,28 +23,17 @@ else
     apt-get dist-upgrade -y
 fi
 
-# 2. Determine admin credentials
-if [ -n "${ADMIN_USER:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
-    log_info "Using ADMIN_USER from environment (unattended mode): $ADMIN_USER"
-elif [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would prompt interactively for ADMIN_USER and ADMIN_PASSWORD"
+# 2. Admin credentials (provided by main.sh interactive phase or environment)
+if [ "$PLAN_MODE" = "1" ]; then
+    log_info "PLAN: would use ADMIN_USER and ADMIN_PASSWORD from environment"
     ADMIN_USER="${ADMIN_USER:-admin}"
     ADMIN_PASSWORD=""
 else
-    printf 'Admin username [admin]: ' >&2
-    read -r ADMIN_USER
-    ADMIN_USER="${ADMIN_USER:-admin}"
-    while true; do
-        printf 'Password for %s: ' "$ADMIN_USER" >&2
-        read -rs ADMIN_PASSWORD; echo >&2
-        printf 'Confirm password: ' >&2
-        read -rs ADMIN_PASSWORD_CONFIRM; echo >&2
-        if [ "$ADMIN_PASSWORD" = "$ADMIN_PASSWORD_CONFIRM" ] && [ -n "$ADMIN_PASSWORD" ]; then
-            break
-        fi
-        log_warn "Passwords do not match (or empty); try again"
-    done
-    unset ADMIN_PASSWORD_CONFIRM
+    if [ -z "${ADMIN_USER:-}" ]; then
+        ADMIN_USER="admin"
+        log_warn "ADMIN_USER not set; using default: $ADMIN_USER"
+    fi
+    log_info "Using admin user: $ADMIN_USER"
 fi
 
 # 3. Create user (idempotent)
