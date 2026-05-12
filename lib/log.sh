@@ -2,18 +2,26 @@
 # lib/log.sh — Logging utilities
 #
 # Provides:
-#   log_info / log_warn / log_error
+#   log_debug / log_info / log_warn / log_error
 #   log_check_diskspace
 #   log_migrate
+#
+# Log level filtering via TOOLKIT_LOG_LEVEL (default: info):
+#   debug  — show DEBUG, INFO, WARN, ERROR
+#   info   — show INFO, WARN, ERROR  (default)
+#   warn   — show WARN, ERROR
+#   error  — show ERROR only
 
 # Color codes (only used when output is a tty)
 if [ -t 1 ]; then
     readonly _LOG_COLOR_RESET="\033[0m"
+    readonly _LOG_COLOR_DEBUG="\033[0;36m"
     readonly _LOG_COLOR_INFO="\033[0;32m"
     readonly _LOG_COLOR_WARN="\033[0;33m"
     readonly _LOG_COLOR_ERROR="\033[0;31m"
 else
     readonly _LOG_COLOR_RESET=""
+    readonly _LOG_COLOR_DEBUG=""
     readonly _LOG_COLOR_INFO=""
     readonly _LOG_COLOR_WARN=""
     readonly _LOG_COLOR_ERROR=""
@@ -21,11 +29,26 @@ fi
 
 # Active log file path (set by main.sh; defaults to stderr only)
 : "${TOOLKIT_LOG_FILE:=}"
+# Minimum log level: debug | info | warn | error  (default: info)
+: "${TOOLKIT_LOG_LEVEL:=info}"
+
+# Returns 0 when <level> should be emitted given TOOLKIT_LOG_LEVEL.
+_log_level_enabled() {
+    local level="$1"
+    case "${TOOLKIT_LOG_LEVEL,,}" in
+        debug) return 0 ;;
+        info)  [[ "$level" == "INFO"  || "$level" == "WARN" || "$level" == "ERROR" ]] && return 0 ;;
+        warn)  [[ "$level" == "WARN"  || "$level" == "ERROR" ]] && return 0 ;;
+        error) [[ "$level" == "ERROR" ]] && return 0 ;;
+    esac
+    return 1
+}
 
 _log_write() {
     local level="$1"
     local color="$2"
     local message="$3"
+    _log_level_enabled "$level" || return 0
     local timestamp
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     # Identify the source file that emitted the log. With nested helper
@@ -43,6 +66,7 @@ _log_write() {
     fi
 }
 
+log_debug() { _log_write "DEBUG" "$_LOG_COLOR_DEBUG" "$*"; }
 log_info()  { _log_write "INFO"  "$_LOG_COLOR_INFO"  "$*"; }
 log_warn()  { _log_write "WARN"  "$_LOG_COLOR_WARN"  "$*"; }
 log_error() {

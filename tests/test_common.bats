@@ -21,6 +21,26 @@ setup() {
     grep -q "\[ERROR\]" "$TOOLKIT_LOG_FILE"
 }
 
+@test "log_debug writes DEBUG level when TOOLKIT_LOG_LEVEL=debug" {
+    TOOLKIT_LOG_LEVEL=debug log_debug "debug message"
+    grep -q "\[DEBUG\]" "$TOOLKIT_LOG_FILE"
+}
+
+@test "log_debug is suppressed when TOOLKIT_LOG_LEVEL=info" {
+    TOOLKIT_LOG_LEVEL=info log_debug "should not appear"
+    ! grep -q "\[DEBUG\]" "$TOOLKIT_LOG_FILE"
+}
+
+@test "log_info is suppressed when TOOLKIT_LOG_LEVEL=warn" {
+    TOOLKIT_LOG_LEVEL=warn log_info "should not appear"
+    ! grep -q "\[INFO\]" "$TOOLKIT_LOG_FILE"
+}
+
+@test "log_warn still appears when TOOLKIT_LOG_LEVEL=warn" {
+    TOOLKIT_LOG_LEVEL=warn log_warn "visible warning" 2>/dev/null
+    grep -q "\[WARN\]" "$TOOLKIT_LOG_FILE"
+}
+
 @test "log_check_diskspace returns 0 on /tmp" {
     run log_check_diskspace /tmp 1
     [ "$status" -eq 0 ]
