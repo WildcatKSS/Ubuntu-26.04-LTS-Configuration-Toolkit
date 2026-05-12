@@ -143,9 +143,6 @@ validate_dag() {
     # Cycle detection via Kahn's algorithm
     local -A indeg=()
     local -A adj=()
-    for short in "${all_short[@]}"; do
-        :
-    done
     for short in "${!MODULE_DEPENDS[@]}"; do
         indeg[$short]="${indeg[$short]:-0}"
         deps="${MODULE_DEPENDS[$short]}"

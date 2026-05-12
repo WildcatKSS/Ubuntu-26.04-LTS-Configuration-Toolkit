@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Disk and service alert — installed to /usr/local/bin/disk-alert.sh by script 09
+# Disk and service alert — installed to /usr/local/bin/disk-alert.sh by script 08
 #
 # Sends an alert email when:
 #   - Any mounted filesystem exceeds DISK_ALERT_THRESHOLD percent

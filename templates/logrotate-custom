@@ -1,4 +1,4 @@
-# Logrotate policy — installed by script 08-monitoring
+# Logrotate policy — installed by script 07-monitoring
 # /etc/logrotate.d/custom
 
 /var/log/toolkit-setup.log

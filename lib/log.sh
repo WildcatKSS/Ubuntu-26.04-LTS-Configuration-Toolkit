@@ -4,7 +4,6 @@
 # Provides:
 #   log_debug / log_info / log_warn / log_error
 #   log_check_diskspace
-#   log_migrate
 #
 # Log level filtering via TOOLKIT_LOG_LEVEL (default: info):
 #   debug  — show DEBUG, INFO, WARN, ERROR
@@ -92,24 +91,4 @@ log_check_diskspace() {
         return 1
     fi
     return 0
-}
-
-# log_migrate <src> <dst>
-# Copy log file from src to dst (used after script 07 to move logs to /var/log)
-log_migrate() {
-    local src="$1"
-    local dst="$2"
-    if [ ! -f "$src" ]; then
-        log_warn "Source log file does not exist: $src"
-        return 0
-    fi
-    local dst_dir
-    dst_dir="$(dirname "$dst")"
-    mkdir -p "$dst_dir"
-    if ! log_check_diskspace "$dst_dir" 100; then
-        log_warn "Skipping log migration; not enough space in $dst_dir"
-        return 1
-    fi
-    cat "$src" >> "$dst"
-    log_info "Migrated logs to $dst"
 }

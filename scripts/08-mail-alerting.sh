@@ -66,7 +66,7 @@ if [ "$PLAN_MODE" = "1" ]; then
 else
     install -m 0755 "$TOOLKIT_ROOT/templates/daily-report.sh" /usr/local/bin/daily-report.sh
     cat >/etc/cron.d/daily-report <<'EOF'
-# Daily server report — installed by ubuntu-24-toolkit
+# Daily server report — installed by ubuntu-26-toolkit
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 0 6 * * * root /usr/local/bin/daily-report.sh
@@ -80,7 +80,7 @@ if [ "$PLAN_MODE" = "1" ]; then
 else
     install -m 0755 "$TOOLKIT_ROOT/templates/disk-alert.sh" /usr/local/bin/disk-alert.sh
     cat >/etc/cron.d/disk-alert <<'EOF'
-# Disk usage and failed-service alert — installed by ubuntu-24-toolkit
+# Disk usage and failed-service alert — installed by ubuntu-26-toolkit
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 */15 * * * * root /usr/local/bin/disk-alert.sh

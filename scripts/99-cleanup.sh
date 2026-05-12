@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # MODULE: 99-cleanup
 # DESC: apt autoremove/clean, service verification, completion banner
-# DEPENDS: 09-mail-alerting
+# DEPENDS: 08-mail-alerting
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

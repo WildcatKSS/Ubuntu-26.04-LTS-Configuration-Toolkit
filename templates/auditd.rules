@@ -1,4 +1,4 @@
-# Audit rules — installed by script 07-hardening
+# Audit rules — installed by script 06-hardening
 # /etc/audit/rules.d/99-toolkit.rules
 
 # Delete all existing rules
