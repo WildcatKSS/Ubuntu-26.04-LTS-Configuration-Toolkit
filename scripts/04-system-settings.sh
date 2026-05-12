@@ -54,7 +54,7 @@ else
 
     tmp="$(mktemp)"
     {
-        echo "# Managed by ubuntu-24-toolkit"
+        echo "# Managed by ubuntu-26-toolkit"
         for srv in "${NTP_SERVERS[@]}"; do
             echo "server $srv iburst"
         done

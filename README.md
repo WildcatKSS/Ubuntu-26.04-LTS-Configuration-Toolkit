@@ -89,9 +89,9 @@ Modules live in `scripts/` and are auto-discovered alphabetically. Each module
 declares its metadata in a header:
 
 ```bash
-# MODULE: 07-hardening
+# MODULE: 06-hardening
 # DESC:   Kernel sysctl hardening, AppArmor verification, auditd setup
-# DEPENDS: 06-packages
+# DEPENDS: 05-packages
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 ```
@@ -100,13 +100,13 @@ declares its metadata in a header:
 |---|---|---|
 | 00 | `00-preflight.sh` | OS=Ubuntu Server 26.04, internet, disk space, apt locks |
 | 01 | `01-base-config.sh` | apt upgrade, sudo user, unattended-upgrades |
-| 03 | `03-ip-config.sh` | Hostname, Netplan, connectivity check + auto-restore |
-| 04 | `04-network-hardening.sh` | cloud-init off, NetworkManager off, UFW (SSH-only), IPv6 off, fail2ban |
-| 05 | `05-system-settings.sh` | Timezone, locale, chrony (replaces systemd-timesyncd) |
-| 06 | `06-packages.sh` | Standard editor / monitoring / network tools |
-| 07 | `07-hardening.sh` | sysctl, AppArmor verify, auditd rules |
-| 08 | `08-monitoring.sh` | sysstat, rsyslog rules, logrotate |
-| 09 | `09-mail-alerting.sh` | Postfix relay, daily report cron, disk/service alert cron |
+| 02 | `02-ip-config.sh` | Hostname, Netplan, connectivity check + auto-restore |
+| 03 | `03-network-hardening.sh` | cloud-init off, NetworkManager off, UFW (SSH-only), IPv6 off, fail2ban |
+| 04 | `04-system-settings.sh` | Timezone, locale, chrony (replaces systemd-timesyncd) |
+| 05 | `05-packages.sh` | Standard editor / monitoring / network tools |
+| 06 | `06-hardening.sh` | sysctl, AppArmor verify, auditd rules |
+| 07 | `07-monitoring.sh` | sysstat, rsyslog rules, logrotate |
+| 08 | `08-mail-alerting.sh` | Postfix relay, daily report cron, disk/service alert cron |
 | 99 | `99-cleanup.sh` | apt autoremove + clean, service verification, banner |
 
 ### Adding your own module
@@ -165,7 +165,7 @@ sudo -E ./main.sh
 
 | Symptom | Fix |
 |---|---|
-| Network broken after `03-ip-config` | `cp -a /etc/netplan.backup/. /etc/netplan/ && netplan apply` |
+| Network broken after `02-ip-config` | `cp -a /etc/netplan.backup/. /etc/netplan/ && netplan apply` |
 | One module failed | `sudo ./main.sh --retry=<module-name>` |
 | Need to re-run from scratch | `sudo ./main.sh --force` |
 | `--list` shows wrong dependency | Inspect the `# DEPENDS:` header in the module |
@@ -179,9 +179,7 @@ grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 
 ## Testing
 
-The repository ships with BATS unit tests and a GitHub Actions workflow
-(`.github/workflows/ci.yml`) that runs `bash -n`, `shellcheck` and `bats` on
-every push.
+The repository ships with BATS unit tests. Run them locally with:
 
 ```bash
 bash -n scripts/*.sh lib/*.sh main.sh

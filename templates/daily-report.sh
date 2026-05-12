@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Daily status report — installed to /usr/local/bin/daily-report.sh by script 09
+# Daily status report — installed to /usr/local/bin/daily-report.sh by script 08
 #
 # Generates a system status report and emails it to ${EMAIL_TO}.
 # Always saves a local copy to /var/log/daily-reports/ (fallback if SMTP fails).

@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Retargeted toolkit at **Ubuntu Server 26.04 LTS**. The preflight OS check
-  now requires `VERSION_ID="26.04"`; runs on 24.04 will be refused. CI
-  workflow runs on `ubuntu-26.04`.
+  now requires `VERSION_ID="26.04"`; runs on 24.04 will be refused.
+- README module table and example header updated to the post-`02-partitions`
+  numbering (00–08, 99) so the documented numbers match the actual files.
 
 ### Removed
 - **Partitioning step**: `scripts/02-partitions.sh` (LVM `vg0` creation) is
@@ -22,6 +23,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   State is now written directly to `/var/log/toolkit-setup/.state` for the
   whole run. Operators upgrading from a previous run should re-run with
   `--force`; old `/tmp/toolkit-setup/.state` data is not migrated.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`) and the now-empty
+  `.github/` directory. Tests are still runnable locally via `bats tests/`
+  and `bash -n` / `shellcheck`.
+- Unused `log_migrate` helper from `lib/log.sh` (left over from the removed
+  `state_promote` migration).
+- Empty no-op loop in `main.sh::validate_dag`.
+
+### Fixed
+- `scripts/99-cleanup.sh` declared `DEPENDS: 09-mail-alerting`, but no such
+  module exists after the 02-partitions removal renumbered things. Corrected
+  to `08-mail-alerting`; this also restores the DAG-validation BATS test.
+- Stale `ubuntu-24-toolkit` markers in templates and runtime-emitted comments
+  updated to `ubuntu-26-toolkit`. Template header comments cited the wrong
+  installer script number (off-by-one after renumbering) and now match.
 
 ### Fixed
 - Preflight no longer fails on networks that block ICMP or that have a

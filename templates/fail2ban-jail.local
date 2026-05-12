@@ -1,4 +1,4 @@
-# Fail2ban jail configuration — installed by script 04-network-hardening
+# Fail2ban jail configuration — installed by script 03-network-hardening
 # /etc/fail2ban/jail.local
 
 [DEFAULT]

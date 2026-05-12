@@ -18,7 +18,7 @@ main.sh
   └── records progress in /var/log/toolkit-setup/.state
 
 lib/common.sh sources:
-  - log.sh    : log_info / log_warn / log_error, log_check_diskspace, log_migrate
+  - log.sh    : log_info / log_warn / log_error, log_check_diskspace
   - config.sh : config_load, config_validate (with email/IP/hostname validators)
   - system.sh : system_check_root, system_confirm, system_user_exists,
                 system_service_enable_start, system_service_mask, system_file_install
@@ -37,7 +37,7 @@ lib/common.sh sources:
    #!/usr/bin/env bash
    # MODULE: 50-myfeature
    # DESC: Short, one-line description
-   # DEPENDS: 06-packages
+   # DEPENDS: 05-packages
    # IDEMPOTENT: yes
    # DESTRUCTIVE: no
 
@@ -128,9 +128,9 @@ read/write it; never hardcode the path.
 Prefix the commit subject with the affected module in square brackets:
 
 ```
-[07-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
+[06-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
 [lib/state] fix race when promoting state file
-[ci] bump shellcheck severity to warning
+[lib/log] bump default log level
 ```
 
 Keep the subject under 70 characters and explain the *why* in the body.
@@ -159,5 +159,3 @@ bash -n scripts/*.sh lib/*.sh main.sh
 shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
 bats tests/
 ```
-
-CI runs the same checks on every push (`.github/workflows/ci.yml`).
