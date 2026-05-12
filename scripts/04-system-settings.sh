@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 05-system-settings
+# MODULE: 04-system-settings
 # DESC: Timezone, locale, NTP via chrony (replaces systemd-timesyncd)
-# DEPENDS: 04-network-hardening
+# DEPENDS: 03-network-hardening
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

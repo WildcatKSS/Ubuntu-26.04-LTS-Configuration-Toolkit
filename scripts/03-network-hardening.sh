@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 04-network-hardening
+# MODULE: 03-network-hardening
 # DESC: Disable cloud-init, remove NetworkManager, enable systemd-networkd, UFW (SSH-only), disable IPv6, fail2ban
-# DEPENDS: 03-ip-config
+# DEPENDS: 02-ip-config
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

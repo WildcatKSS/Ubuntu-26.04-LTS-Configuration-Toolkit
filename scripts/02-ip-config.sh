@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MODULE: 03-ip-config
+# MODULE: 02-ip-config
 # DESC: Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore on failure
 # DEPENDS: 01-base-config
 # IDEMPOTENT: yes
