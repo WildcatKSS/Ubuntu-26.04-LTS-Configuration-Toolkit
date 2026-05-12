@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 08-monitoring
+# MODULE: 07-monitoring
 # DESC: Sysstat collection, custom rsyslog rules, logrotate policies
-# DEPENDS: 07-hardening
+# DEPENDS: 06-hardening
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 07-hardening
+# MODULE: 06-hardening
 # DESC: Kernel sysctl hardening, AppArmor verification, auditd setup
-# DEPENDS: 06-packages
+# DEPENDS: 05-packages
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

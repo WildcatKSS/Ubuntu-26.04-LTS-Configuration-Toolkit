@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 06-packages
+# MODULE: 05-packages
 # DESC: Install of standard package set
-# DEPENDS: 05-system-settings
+# DEPENDS: 04-system-settings
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 

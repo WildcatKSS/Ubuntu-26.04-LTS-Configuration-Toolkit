@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MODULE: 09-mail-alerting
+# MODULE: 08-mail-alerting
 # DESC: Postfix relay, daily report cron, disk/service alert cron with local fallback
-# DEPENDS: 08-monitoring
+# DEPENDS: 07-monitoring
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
 
