@@ -35,7 +35,6 @@ FLAG_DRY_RUN=0
 FLAG_RESUME=0
 FLAG_FORCE=0
 FLAG_IGNORE_ERRORS=0
-FLAG_QUIET=0
 ONLY_MODULE=""
 SKIP_MODULES=""
 RETRY_MODULE=""
@@ -57,10 +56,6 @@ Execution control:
   --skip=<m1,m2,...>    Skip these modules (comma-separated short names).
   --ignore-errors       Continue when a non-critical module exits non-zero.
 
-Output control:
-  --quiet               Suppress command output, only show log messages (timestamps, INFO/WARN/ERROR).
-                        Errors and warnings still visible. All activity logged to file.
-
   -h, --help            Show this help and exit.
 EOF
 }
@@ -73,7 +68,6 @@ while [ $# -gt 0 ]; do
         --resume)         FLAG_RESUME=1 ;;
         --force)          FLAG_FORCE=1 ;;
         --ignore-errors)  FLAG_IGNORE_ERRORS=1 ;;
-        --quiet)          FLAG_QUIET=1 ;;
         --only=*)         ONLY_MODULE="${1#*=}" ;;
         --skip=*)         SKIP_MODULES="${1#*=}" ;;
         --retry=*)        RETRY_MODULE="${1#*=}" ;;
@@ -204,49 +198,6 @@ print_listing() {
 }
 
 # ---------------------------------------------------------------------------
-# Interactive configuration phase
-# ---------------------------------------------------------------------------
-collect_interactive_inputs() {
-    # This function collects all user inputs upfront so the toolkit can run unattended.
-    # If TOOLKIT_NONINTERACTIVE=1, uses defaults or errors on missing required values.
-
-    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
-        return 0  # Skip in plan/dry-run modes
-    fi
-
-    if [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
-        log_info "Non-interactive mode: skipping configuration prompts"
-        return 0
-    fi
-
-    # Only prompt if not already set in environment or config
-    if [ -z "${ADMIN_USER:-}" ]; then
-        printf '\n%s\n' "=== CONFIGURATION QUESTIONS ==="
-        printf 'Admin username [admin]: ' >&2
-        read -r ADMIN_USER
-        ADMIN_USER="${ADMIN_USER:-admin}"
-        export ADMIN_USER
-    fi
-
-    if [ -z "${ADMIN_PASSWORD:-}" ]; then
-        while true; do
-            printf 'Password for %s: ' "$ADMIN_USER" >&2
-            read -rs ADMIN_PASSWORD; echo >&2
-            printf 'Confirm password: ' >&2
-            read -rs ADMIN_PASSWORD_CONFIRM; echo >&2
-            if [ "$ADMIN_PASSWORD" = "$ADMIN_PASSWORD_CONFIRM" ] && [ -n "$ADMIN_PASSWORD" ]; then
-                export ADMIN_PASSWORD
-                break
-            fi
-            printf 'Passwords do not match (or empty); try again\n' >&2
-        done
-        unset ADMIN_PASSWORD_CONFIRM
-    fi
-
-    log_info "Configuration questions collected; proceeding unattended"
-}
-
-# ---------------------------------------------------------------------------
 # Module execution
 # ---------------------------------------------------------------------------
 should_skip() {
@@ -310,30 +261,16 @@ run_module() {
     local env_vars=("TOOLKIT_ROOT=$TOOLKIT_ROOT")
     [ "$FLAG_PLAN" -eq 1 ] && env_vars+=("TOOLKIT_PLAN_MODE=1")
 
-    if [ "$FLAG_QUIET" -eq 1 ]; then
-        if env "${env_vars[@]}" bash "$path" >/dev/null; then
-            log_info "===== END   $short (started $start_ts; ok) ====="
-            state_mark_complete "$short"
-        else
-            rc=$?
-            log_error "===== FAIL  $short (started $start_ts; exit $rc) ====="
-            if [ "$FLAG_IGNORE_ERRORS" -eq 0 ]; then
-                return "$rc"
-            fi
-            log_warn "--ignore-errors set; continuing despite failure in $short"
-        fi
+    if env "${env_vars[@]}" bash "$path"; then
+        log_info "===== END   $short (started $start_ts; ok) ====="
+        state_mark_complete "$short"
     else
-        if env "${env_vars[@]}" bash "$path"; then
-            log_info "===== END   $short (started $start_ts; ok) ====="
-            state_mark_complete "$short"
-        else
-            rc=$?
-            log_error "===== FAIL  $short (started $start_ts; exit $rc) ====="
-            if [ "$FLAG_IGNORE_ERRORS" -eq 0 ]; then
-                return "$rc"
-            fi
-            log_warn "--ignore-errors set; continuing despite failure in $short"
+        rc=$?
+        log_error "===== FAIL  $short (started $start_ts; exit $rc) ====="
+        if [ "$FLAG_IGNORE_ERRORS" -eq 0 ]; then
+            return "$rc"
         fi
+        log_warn "--ignore-errors set; continuing despite failure in $short"
     fi
 
     run_hook "$TOOLKIT_ROOT/scripts/hooks/post-${short}.sh"
@@ -404,9 +341,6 @@ main() {
     config_validate || exit 1
 
     state_init
-
-    # Collect interactive inputs upfront
-    collect_interactive_inputs
 
     # Run modules
     local path
