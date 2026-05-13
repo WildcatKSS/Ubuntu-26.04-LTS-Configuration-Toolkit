@@ -24,22 +24,27 @@ else
 fi
 
 # 2. Admin credentials (from questionnaire or environment)
-if [ -z "${ADMIN_USER:-}" ] || [ -z "${ADMIN_PASSWORD:-}" ]; then
-    log_error "ADMIN_USER and ADMIN_PASSWORD must be set (run questionnaire or set environment)"
-    exit 1
-fi
-
-log_info "Admin user: $ADMIN_USER"
-
-# 3. Handle admin user based on mode
 ADMIN_MODE_CREATE_USER="${ADMIN_MODE_CREATE_USER:-yes}"
 
+if [ "$ADMIN_MODE_CREATE_USER" != "skip" ]; then
+    if [ -z "${ADMIN_USER:-}" ] || [ -z "${ADMIN_PASSWORD:-}" ]; then
+        log_error "ADMIN_USER and ADMIN_PASSWORD must be set (run questionnaire or set environment)"
+        exit 1
+    fi
+    log_info "Admin user: $ADMIN_USER"
+fi
+
+# 3. Handle admin user based on mode
 if [ "$PLAN_MODE" = "1" ]; then
-    if [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
+    if [ "$ADMIN_MODE_CREATE_USER" = "skip" ]; then
+        log_info "PLAN: skipping sudo user configuration"
+    elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
         log_info "PLAN: would create user $ADMIN_USER and add to sudo group"
     else
         log_info "PLAN: would change password for user $ADMIN_USER"
     fi
+elif [ "$ADMIN_MODE_CREATE_USER" = "skip" ]; then
+    log_info "Skipping sudo user configuration (user selected skip)"
 elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
     # Create new sudo user
     if system_user_exists "$ADMIN_USER"; then

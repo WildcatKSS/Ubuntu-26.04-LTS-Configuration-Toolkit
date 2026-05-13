@@ -8,7 +8,7 @@
 # Usage: source this file and call questionnaire_run to collect all answers
 #
 # Environment variables set by this questionnaire:
-#   ADMIN_MODE_CREATE_USER      "yes" to create new user, "no" to change password
+#   ADMIN_MODE_CREATE_USER      "yes" to create new user, "no" to change password, "skip" to leave unchanged
 #   ADMIN_USER                  Username for new admin user or existing user
 #   ADMIN_PASSWORD              Password for admin user
 #   TOOLKIT_LOG_LEVEL           Log level (debug|info|warn|error)
@@ -84,13 +84,18 @@ questionnaire_run() {
     log_info "Section 1: Admin User Configuration"
     echo
 
+    if [ "${ADMIN_MODE_CREATE_USER:-}" = "skip" ]; then
+        log_info "Skipping admin user configuration (ADMIN_MODE_CREATE_USER=skip)"
+    else
+
     log_info "Do you want to:"
     echo "  1. Create a new sudo user"
     echo "  2. Change password for an existing sudo user"
+    echo "  3. Skip (no changes to sudo user)"
     echo
 
     while true; do
-        printf 'Select option (1 or 2): ' >&2
+        printf 'Select option (1, 2 or 3): ' >&2
         read -r user_choice
         case "$user_choice" in
             1)
@@ -139,11 +144,18 @@ questionnaire_run() {
                 export ADMIN_PASSWORD
                 break
                 ;;
+            3)
+                export ADMIN_MODE_CREATE_USER="skip"
+                log_info "Mode: Skipping sudo user configuration"
+                break
+                ;;
             *)
-                log_warn "Invalid choice. Enter 1 or 2."
+                log_warn "Invalid choice. Enter 1, 2 or 3."
                 ;;
         esac
     done
+
+    fi  # end ADMIN_MODE_CREATE_USER != skip
 
     echo
     # Section 2: System Configuration
@@ -232,6 +244,15 @@ questionnaire_create_config() {
 #
 # Variables prompted interactively (or via env var) — NOT in this file:
 #   ADMIN_USER, ADMIN_PASSWORD       (script 01)
+
+# ---------------------------------------------------------------------------
+# Admin user
+# ---------------------------------------------------------------------------
+EOF
+
+    echo "ADMIN_MODE_CREATE_USER=\"${ADMIN_MODE_CREATE_USER:-yes}\"" >> "$conf_file"
+
+    cat >> "$conf_file" <<'EOF'
 
 # ---------------------------------------------------------------------------
 # Logging
