@@ -25,6 +25,9 @@ export TOOLKIT_ROOT
 # shellcheck source=lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
+# shellcheck source=lib/version.sh
+source "$TOOLKIT_ROOT/lib/version.sh"
+
 # Path conventions
 TOOLKIT_PERSISTENT_DIR="${TOOLKIT_PERSISTENT_DIR:-/var/log/toolkit-setup}"
 TOOLKIT_LOG_FILE="${TOOLKIT_LOG_FILE:-$TOOLKIT_PERSISTENT_DIR/toolkit-setup.log}"
@@ -69,6 +72,7 @@ Execution control:
   --ignore-errors       Continue when a non-critical module exits non-zero.
 
   -h, --help            Show this help and exit.
+  -v, --version         Show version and exit.
 EOF
 }
 
@@ -85,6 +89,7 @@ while [ $# -gt 0 ]; do
         --skip=*)         SKIP_MODULES="${1#*=}" ;;
         --retry=*)        RETRY_MODULE="${1#*=}" ;;
         -h|--help)        usage; exit 0 ;;
+        -v|--version)     toolkit_version_info; exit 0 ;;
         *) log_error "Unknown flag: $1"; usage; exit 2 ;;
     esac
     shift
@@ -419,6 +424,8 @@ main() {
     if ! validate_dag; then
         exit 2
     fi
+
+    log_info "$(toolkit_version_info)"
 
     # Run tests if requested, or automatically with --plan/--dry-run
     if [ "$FLAG_TEST" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then

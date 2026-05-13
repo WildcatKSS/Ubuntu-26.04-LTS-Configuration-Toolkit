@@ -167,6 +167,32 @@ git commit --amend --no-edit
 
 ---
 
+## Release and versioning
+
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as documented in `CHANGELOG.md`.
+
+**Version numbering:**
+- **MAJOR** (X.0.0): Breaking API/config changes (module removal, incompatible syntax)
+- **MINOR** (1.X.0): Backwards-compatible features (new modules, new flags)
+- **PATCH** (1.0.X): Backwards-compatible bug fixes, documentation updates
+
+**Release process:**
+1. Update `CHANGELOG.md`: move `[Unreleased]` changes to a new `[X.Y.Z] – YYYY-MM-DD` section
+2. Update `VERSION` file with the new version number (e.g., `2.1.0`)
+3. Commit: `git commit -m "[release] v2.1.0"`
+4. Create git tag: `git tag -a v2.1.0 -m "Release v2.1.0"`
+5. Push: `git push origin main --tags`
+
+**Version retrieval at runtime:**
+```bash
+./main.sh --version
+# or in a script:
+source lib/version.sh
+VERSION=$(toolkit_get_version)
+```
+
+---
+
 ## Commit message format
 
 Prefix the commit subject with the affected module in square brackets:

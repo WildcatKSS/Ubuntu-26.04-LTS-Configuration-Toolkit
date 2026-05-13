@@ -7,32 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- `lib/log.sh`: logging functions (`log_info`, `log_warn`, `log_error`) now work correctly when called from top-level scripts with `set -u` active.
-  Previously, the BASH_SOURCE array index checks could fail under strict variable mode.
-- `lib/log.sh`: `_log_write` now uses explicit array length checks instead of `${BASH_SOURCE[N]:-}`,
-  fixing the top-level-script regression test on bash 5.3+ where indirect array indexing under `set -u`
-  is stricter than in earlier versions.
-- `lib/log.sh`: `_log_write` now iterates over `BASH_SOURCE` with a `for`-loop instead of indexing
-  individual elements, eliminating the remaining `set -u` failure mode on bash 5.3+ and producing
-  the same caller resolution for shallow (top-level script) and deep (main.sh wrapper) call stacks.
-- `tests/test_common.bats`: regression test now invokes `bash "$script"` directly instead of relying
-  on a shebang + `chmod +x`, so the test no longer breaks on systems where `BATS_TEST_TMPDIR` lives
-  on a `noexec` mount. On failure the test prints `status` and captured `output` so the underlying
-  error is visible instead of a bare `[ "$status" -eq 0 ]' failed` line.
-- `lib/log.sh`: file appends are now skipped when the log file's parent directory does not exist,
-  eliminating the spurious `No such file or directory` redirection error from bash itself.
-- `lib/log.sh`: `log_error` only prints the "Run grep ERROR …" recovery hint when the log file
-  actually exists, avoiding a misleading pointer to a non-existent path.
-- `main.sh`: creates `TOOLKIT_PERSISTENT_DIR` at startup (best-effort) so log writes succeed
-  from the first call, before the root-only setup steps run.
-
 ### Added
-- Pre-commit hook (`.git/hooks/pre-commit`) that enforces changelog updates for all code changes.
-  Developers must update `CHANGELOG.md` under `[Unreleased]` before committing code changes.
-- Changelog maintenance documentation in `CONTRIBUTING.md` with instructions for updating the changelog.
+- **Semantic Versioning**: Toolkit now implements full semantic versioning (MAJOR.MINOR.PATCH) as per https://semver.org/.
+  - `VERSION` file in repository root tracks current release version.
+  - `lib/version.sh` provides version helpers: `toolkit_get_version()`, `toolkit_version_info()`, `toolkit_validate_version_format()`.
+  - `./main.sh --version` (or `-v`) displays current version.
+  - Version information logged at toolkit startup.
+  - `CHANGELOG.md` documents all releases with semver categories (Added, Changed, Deprecated, Removed, Fixed, Security).
 
-## [2.0.0] – Ubuntu 26.04 LTS Migration
+### Documentation
+- **Version management guide** in `CHANGELOG.md` with release process and version retrieval examples.
+
+---
+
+## [2.0.0] – Ubuntu 26.04 LTS Migration – 2025-05-13
 
 ### Changed
 - **Target OS**: Toolkit now targets **Ubuntu Server 26.04 LTS** exclusively.
