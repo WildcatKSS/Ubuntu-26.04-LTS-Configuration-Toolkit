@@ -14,11 +14,7 @@ git clone https://github.com/WildcatKSS/Ubuntu-26.04-LTS-Configuration-Toolkit
 cd Ubuntu-26.04-LTS-Configuration-Toolkit
 cp config/defaults.conf.example config/defaults.conf
 sudo vi config/defaults.conf
-
-sudo ./main.sh --list      # show modules and dependency graph
-sudo ./main.sh --plan      # read-only audit (no changes)
-sudo ./main.sh --dry-run   # bash -n syntax check
-sudo ./main.sh             # actual run
+sudo ./main.sh
 ```
 
 Update
