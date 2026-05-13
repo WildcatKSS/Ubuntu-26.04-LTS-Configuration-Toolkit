@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # MODULE: 08-mail-alerting
 # DESC: Postfix relay, daily report cron, disk/service alert cron with local fallback
 # DEPENDS: 07-monitoring

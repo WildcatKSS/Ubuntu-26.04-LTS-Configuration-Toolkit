@@ -194,4 +194,21 @@ see the verification steps in the project plan for the full procedure.
 
 ## License
 
-See repository LICENSE file.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
+for the full text.
+
+### Copyright
+
+© 2025 WildcatKSS
+
+### MIT License Summary
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software to use, modify, merge, publish, distribute, sublicense, and/or
+sell copies, subject only to the following conditions:
+
+- The above copyright notice and this permission notice must be included in all
+  copies or substantial portions of the software.
+- The software is provided "as-is" without any warranty or liability.
+
+For full terms, see [LICENSE](LICENSE).
