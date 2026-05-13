@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Pre-commit hook for version and changelog enforcement
+# Install via: ln -sf ../../scripts/hooks/pre-commit .git/hooks/pre-commit
+
+set -euo pipefail
+
+TOOLKIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$TOOLKIT_ROOT"
+
+STAGED_FILES=$(git diff --cached --name-only)
+CHANGED_CODE_FILES=$(echo "$STAGED_FILES" | grep -E '^(scripts/|lib/|main\.sh|templates/)' | wc -l)
+
+# If any code files are staged, check that VERSION or CHANGELOG were modified
+if [ "$CHANGED_CODE_FILES" -gt 0 ]; then
+    VERSION_CHANGED=$(echo "$STAGED_FILES" | grep -c '^VERSION$' || true)
+    CHANGELOG_CHANGED=$(echo "$STAGED_FILES" | grep -c '^CHANGELOG\.md$' || true)
+
+    if [ "$VERSION_CHANGED" -eq 0 ] && [ "$CHANGELOG_CHANGED" -eq 0 ]; then
+        echo "❌ Pre-commit hook: Code changes detected but VERSION or CHANGELOG not updated"
+        echo ""
+        echo "Modified files:"
+        echo "$STAGED_FILES" | grep -E '^(scripts/|lib/|main\.sh|templates/)' | sed 's/^/  /'
+        echo ""
+        echo "To fix:"
+        echo "  1. Determine version bump (MAJOR.MINOR.PATCH):"
+        echo "     - PATCH: Bug fixes, documentation"
+        echo "     - MINOR: New features, new modules"
+        echo "     - MAJOR: Breaking changes"
+        echo ""
+        echo "  2. Update VERSION file:"
+        echo "     echo '1.1.0' > VERSION"
+        echo "     git add VERSION"
+        echo ""
+        echo "  3. Update CHANGELOG.md with your changes under [Unreleased]"
+        echo "     git add CHANGELOG.md"
+        echo ""
+        echo "  4. Commit again:"
+        echo "     git commit"
+        echo ""
+        echo "To skip this check (NOT RECOMMENDED):"
+        echo "  git commit --no-verify"
+        exit 1
+    fi
+
+    if [ "$VERSION_CHANGED" -eq 1 ]; then
+        echo "✅ VERSION file staged for commit"
+    fi
+fi
+
+# Validate VERSION file format if it was modified
+if [ "$VERSION_CHANGED" -eq 1 ]; then
+    VERSION=$(cat VERSION)
+    if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$ ]]; then
+        echo "❌ Invalid VERSION format: $VERSION"
+        echo "Must follow semantic versioning: MAJOR.MINOR.PATCH"
+        echo "Example: 1.0.0, 1.1.0-beta.1, 2.0.0+build.123"
+        exit 1
+    fi
+    echo "✅ VERSION format valid: $VERSION"
+fi
+
+exit 0
