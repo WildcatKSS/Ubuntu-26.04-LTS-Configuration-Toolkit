@@ -355,10 +355,6 @@ main() {
 
     state_init
 
-    # Run questionnaire for remaining prompts (admin user, etc.)
-    # unless in plan mode or non-interactive
-    questionnaire_run
-
     # Run modules
     local path
     for path in "${MODULE_PATHS[@]}"; do
