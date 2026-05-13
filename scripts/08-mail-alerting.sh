@@ -34,6 +34,7 @@ else
     MAIL_DOMAIN="${HOSTNAME#*.}"
     export HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT
     tmp="$(mktemp)"
+    # shellcheck disable=SC2016
     envsubst '${HOSTNAME} ${MAIL_DOMAIN} ${SMTP_RELAY_HOST} ${SMTP_RELAY_PORT}' < "$template" > "$tmp"
     if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
         log_info "Postfix main.cf unchanged"

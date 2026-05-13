@@ -232,6 +232,16 @@ install_test_deps() {
         fi
     fi
 
+    if ! command -v envsubst >/dev/null 2>&1; then
+        log_info "Installing gettext-base..."
+        if apt-get install -y gettext-base >/dev/null 2>&1; then
+            log_info "  ✓ gettext-base installed"
+        else
+            log_warn "  ⊘ Failed to install gettext-base (may require root)"
+            failed=1
+        fi
+    fi
+
     return "$failed"
 }
 
