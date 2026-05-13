@@ -118,22 +118,6 @@ Optional `scripts/hooks/pre-<module>.sh` and `scripts/hooks/post-<module>.sh`
 files run before/after the matching module. Hook failures are logged but never
 stop the run.
 
-### Validation
-
-Validate the toolkit locally without root:
-
-```bash
-bash -n scripts/*.sh lib/*.sh main.sh                    # syntax check
-shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh  # lint
-bats tests/                                               # unit tests
-```
-
-For end-to-end idempotency testing (run-twice-no-change) on a real or virtual Ubuntu Server 26.04 host:
-
-```bash
-sudo ./main.sh --test
-```
-
 ---
 
 ## State and logging
