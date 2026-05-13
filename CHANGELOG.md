@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lib/log.sh`: `_log_write` now uses explicit array length checks instead of `${BASH_SOURCE[N]:-}`,
   fixing the top-level-script regression test on bash 5.3+ where indirect array indexing under `set -u`
   is stricter than in earlier versions.
+- `lib/log.sh`: `_log_write` now iterates over `BASH_SOURCE` with a `for`-loop instead of indexing
+  individual elements, eliminating the remaining `set -u` failure mode on bash 5.3+ and producing
+  the same caller resolution for shallow (top-level script) and deep (main.sh wrapper) call stacks.
+- `tests/test_common.bats`: regression test now invokes `bash "$script"` directly instead of relying
+  on a shebang + `chmod +x`, so the test no longer breaks on systems where `BATS_TEST_TMPDIR` lives
+  on a `noexec` mount. On failure the test prints `status` and captured `output` so the underlying
+  error is visible instead of a bare `[ "$status" -eq 0 ]' failed` line.
 - `lib/log.sh`: file appends are now skipped when the log file's parent directory does not exist,
   eliminating the spurious `No such file or directory` redirection error from bash itself.
 - `lib/log.sh`: `log_error` only prints the "Run grep ERROR …" recovery hint when the log file

@@ -53,18 +53,19 @@ _log_write() {
     _log_level_enabled "$level" || return 0
     local timestamp
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
-    # Walk the BASH_SOURCE stack from the deepest known level (run_module
-    # wrapper at index 3) down to direct callers (index 2). Use explicit
-    # length checks so we never touch an out-of-range index — bash 5.3
-    # made `${array[N]:-}` stricter under `set -u`.
-    local caller="" depth="${#BASH_SOURCE[@]}"
-    if (( depth > 3 )); then
-        caller="${BASH_SOURCE[3]}"
-    elif (( depth > 2 )); then
-        caller="${BASH_SOURCE[2]}"
-    fi
-    caller="${caller##*/}"
-    [ -z "$caller" ] && caller="main.sh"
+    # Identify the calling script by iterating over BASH_SOURCE rather than
+    # indexing into it. Indexed access (even with `${arr[N]:-}`) became
+    # stricter under `set -u` in bash 5.3+, so we avoid it entirely.
+    # The last frame whose basename is not log.sh is the caller we want;
+    # this works for shallow (top-level script) and deep (main.sh wrapper)
+    # call stacks alike.
+    local caller="main.sh"
+    local frame base
+    for frame in "${BASH_SOURCE[@]}"; do
+        base="${frame##*/}"
+        [ "$base" = "log.sh" ] && continue
+        caller="$base"
+    done
     local line="[$timestamp] [$level] [$caller] $message"
     printf '%b%s%b\n' "$color" "$line" "$_LOG_COLOR_RESET" >&2
     if [ -n "$TOOLKIT_LOG_FILE" ] && [ -d "${TOOLKIT_LOG_FILE%/*}" ]; then
