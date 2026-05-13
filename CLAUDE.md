@@ -19,7 +19,7 @@ scripts/hooks/             — optional pre-/post- hooks per module
 templates/                 — config files copied/rendered by modules
 lib/                       — sourced helpers (log, config, system, pkg, state)
 tests/                     — BATS unit + structural tests
-.github/workflows/ci.yml   — ShellCheck + bash -n + BATS
+LICENSE                    — MIT License
 ```
 
 ## Conventions you MUST follow
@@ -57,8 +57,8 @@ a hardcoded path — call the helpers (`state_mark_complete`, `state_is_complete
 
 ## Critical constraints
 
-- **Never** push to `main`/`master`. The active branch is
-  `claude/ubuntu-setup-scripts-zlvpE`.
+- **Never** push to `main`/`master` directly. Development work is done on feature branches
+  (e.g. `claude/feature-name-XXXXX`); all changes merge to `main` via pull requests.
 - **Never** commit `config/defaults.conf` — it is gitignored to keep
   credentials out of git.
 - **Never** add a module that is destructive without setting
@@ -111,3 +111,10 @@ state_summary
 `tests/test_common.bats` runs unit tests on `lib/*` and works without root.
 `tests/test_idempotency.bats` does structural checks (metadata, syntax, DAG).
 End-to-end idempotency requires a VM and is a manual procedure (see README).
+
+Run tests locally with:
+```bash
+bash -n scripts/*.sh lib/*.sh main.sh
+shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
+bats tests/
+```

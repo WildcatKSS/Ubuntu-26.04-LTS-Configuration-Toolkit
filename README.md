@@ -179,7 +179,7 @@ grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 
 ## Testing
 
-The repository ships with BATS unit tests. Run them locally with:
+The repository includes BATS unit tests and can be validated locally without root:
 
 ```bash
 bash -n scripts/*.sh lib/*.sh main.sh
@@ -187,8 +187,12 @@ shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
 bats tests/
 ```
 
-End-to-end testing must happen on a real (or virtual) Ubuntu Server 26.04 host —
-see the verification steps in the project plan for the full procedure.
+End-to-end idempotency testing (run-twice-no-change) requires a real or virtual Ubuntu Server 26.04 host.
+For CI/CD integration, the toolkit supports the `--test` flag for automated validation:
+
+```bash
+sudo ./main.sh --test
+```
 
 ---
 
@@ -199,7 +203,7 @@ for the full text.
 
 ### Copyright
 
-© 2025 WildcatKSS
+© 2026 WildcatKSS
 
 ### MIT License Summary
 
