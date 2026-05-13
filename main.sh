@@ -209,10 +209,39 @@ print_listing() {
 # ---------------------------------------------------------------------------
 # Testing
 # ---------------------------------------------------------------------------
+install_test_deps() {
+    local failed=0
+
+    if ! command -v shellcheck >/dev/null 2>&1; then
+        log_info "Installing ShellCheck..."
+        if apt-get install -y shellcheck >/dev/null 2>&1; then
+            log_info "  ✓ ShellCheck installed"
+        else
+            log_warn "  ⊘ Failed to install ShellCheck (may require root)"
+            failed=1
+        fi
+    fi
+
+    if ! command -v bats >/dev/null 2>&1; then
+        log_info "Installing BATS..."
+        if apt-get install -y bats >/dev/null 2>&1; then
+            log_info "  ✓ BATS installed"
+        else
+            log_warn "  ⊘ Failed to install BATS (may require root)"
+            failed=1
+        fi
+    fi
+
+    return "$failed"
+}
+
 run_tests() {
     local failed=0
 
     log_info "Running test suite..."
+    echo
+
+    install_test_deps || true
     echo
 
     # Syntax checks
@@ -235,7 +264,7 @@ run_tests() {
             failed=1
         fi
     else
-        log_warn "  ⊘ ShellCheck not installed; skipping"
+        log_warn "  ⊘ ShellCheck not available; skipping"
     fi
     echo
 
@@ -249,7 +278,7 @@ run_tests() {
             failed=1
         fi
     else
-        log_warn "  ⊘ BATS not installed; skipping"
+        log_warn "  ⊘ BATS not available; skipping"
     fi
     echo
 
