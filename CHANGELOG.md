@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] – 2026-05-13
+
+### Changed
+- **Code Quality Refactoring**: Introduced `lib/plan.sh` with `plan_action()` helper function
+  - Eliminated 17+ instances of boilerplate PLAN_MODE checking patterns across modules
+  - Reduces code duplication by ~50 lines
+  - Centralizes plan-mode logic for easier maintenance and future updates
+  - Refactored modules: 01-base-config, 02-ip-config, 03-network-hardening, 08-mail-alerting
+
+### Fixed
+- **Language Consistency**: Removed Dutch language strings from 08-mail-alerting.sh
+  - All logging and email strings now consistently in English
+  - Improves i18n compatibility for future localization efforts
+- **DNS Configuration**: Added bounds checking for DNS_SERVERS array in 02-ip-config.sh
+  - Now warns if DNS_SERVERS is empty instead of silently continuing
+
 ## [1.0.1] – 2026-05-13
 
 ### Changed
