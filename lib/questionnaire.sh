@@ -71,7 +71,7 @@ questionnaire_prompt_password() {
 # questionnaire_run
 # Main questionnaire: prompts for all configuration needed across modules.
 questionnaire_run() {
-    if [ "$PLAN_MODE" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
+    if [ "${TOOLKIT_PLAN_MODE:-0}" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
         log_info "Skipping questionnaire (plan mode or non-interactive)"
         return 0
     fi
