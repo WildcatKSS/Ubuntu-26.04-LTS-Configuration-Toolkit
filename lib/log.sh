@@ -58,7 +58,9 @@ _log_write() {
     # script sits at BASH_SOURCE[3]; for direct calls from a module body
     # the stack is one shorter, so fall back to BASH_SOURCE[2]. Both must
     # tolerate `set -u` from the calling shell.
-    local caller="${BASH_SOURCE[3]:-${BASH_SOURCE[2]:-}}"
+    local caller=""
+    [[ -v BASH_SOURCE[3] ]] && caller="${BASH_SOURCE[3]}"
+    [[ -z "$caller" && -v BASH_SOURCE[2] ]] && caller="${BASH_SOURCE[2]}"
     caller="${caller##*/}"
     [ -z "$caller" ] && caller="main.sh"
     local line="[$timestamp] [$level] [$caller] $message"
