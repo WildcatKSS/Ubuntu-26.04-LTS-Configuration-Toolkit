@@ -52,13 +52,16 @@ setup() {
     # logger must tolerate that without tripping nounset.
     local script="$BATS_TEST_TMPDIR/topcaller.sh"
     cat >"$script" <<EOF
-#!/usr/bin/env bash
 set -euo pipefail
 source "$TOOLKIT_ROOT/lib/common.sh"
 log_info "from-top-level"
 EOF
-    chmod +x "$script"
-    run "$script"
+    # Invoke bash directly rather than relying on a shebang line + chmod +x,
+    # so the test is robust against noexec mounts on BATS_TEST_TMPDIR.
+    run bash "$script"
+    if [ "$status" -ne 0 ]; then
+        printf 'topcaller exited %s; output:\n%s\n' "$status" "$output" >&2
+    fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"from-top-level"* ]]
 }
