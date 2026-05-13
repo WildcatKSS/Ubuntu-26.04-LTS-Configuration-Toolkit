@@ -88,4 +88,19 @@ EOF
     chmod 0644 /etc/cron.d/disk-alert
 fi
 
+# 5. Optional test mail
+if [ "${SEND_TEST_MAIL:-no}" = "yes" ]; then
+    if [ "$PLAN_MODE" = "1" ]; then
+        log_info "PLAN: would send test mail to ${EMAIL_TO}"
+    else
+        log_info "Testmail versturen naar ${EMAIL_TO}..."
+        if echo "Dit is een testmail van de Ubuntu 26.04 Toolkit op $(hostname). Postfix relay werkt correct." \
+            | mail -s "[toolkit] Postfix testmail van $(hostname)" "${EMAIL_TO}"; then
+            log_info "Testmail verstuurd naar ${EMAIL_TO}"
+        else
+            log_warn "Testmail mislukt — controleer /var/log/mail.log en de SMTP-relay instellingen"
+        fi
+    fi
+fi
+
 log_info "Mail and alerting complete"

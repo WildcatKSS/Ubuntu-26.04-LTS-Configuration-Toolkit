@@ -26,6 +26,7 @@
 #   SMTP_RELAY_PORT             SMTP relay port
 #   DISK_ALERT_THRESHOLD        Disk usage alert threshold percentage
 #   AUTO_SECURITY_UPDATES       "true" or "false" for unattended upgrades
+#   SEND_TEST_MAIL              "yes" to send a test mail after postfix setup
 
 # questionnaire_prompt_string <prompt> [default]
 # Generic string prompt. Returns the answer or default if empty.
@@ -79,38 +80,46 @@ questionnaire_run() {
     echo
     log_info "=== Ubuntu Toolkit Interactive Setup ==="
     echo
+    echo "Dit script configureert een verse Ubuntu Server 26.04 LTS installatie end-to-end."
+    echo "Beantwoord de vragen per sectie. Druk op Enter om de standaardwaarde te accepteren."
+    echo
 
-    # Section 1: Admin User Setup
-    log_info "Section 1: Admin User Configuration"
+    # -------------------------------------------------------------------------
+    # Section 1: Admin User
+    # -------------------------------------------------------------------------
+    log_info "Sectie 1: Beheerder (sudo gebruiker)"
+    echo
+    echo "De toolkit maakt of configureert een gebruiker met sudo-rechten."
+    echo "Deze account wordt gebruikt voor beheer na de installatie."
+    echo "Root-login via SSH wordt na de installatie uitgeschakeld, dus"
+    echo "zorg dat deze gebruiker correct is ingesteld voordat je doorgaat."
     echo
 
     if [ "${ADMIN_MODE_CREATE_USER:-}" = "skip" ]; then
-        log_info "Skipping admin user configuration (ADMIN_MODE_CREATE_USER=skip)"
+        log_info "Beheerder configuratie overgeslagen (ADMIN_MODE_CREATE_USER=skip)"
     else
 
-    log_info "Do you want to:"
-    echo "  1. Create a new sudo user"
-    echo "  2. Change password for an existing sudo user"
-    echo "  3. Skip (no changes to sudo user)"
+    log_info "Wat wil je doen met de beheerder?"
+    echo "  1. Nieuwe sudo gebruiker aanmaken"
+    echo "  2. Wachtwoord wijzigen van een bestaande sudo gebruiker"
+    echo "  3. Overslaan (geen wijzigingen aan sudo gebruiker)"
     echo
 
     while true; do
-        printf 'Select option (1, 2 or 3): ' >&2
+        printf 'Kies optie (1, 2 of 3): ' >&2
         read -r user_choice
         case "$user_choice" in
             1)
                 export ADMIN_MODE_CREATE_USER="yes"
-                log_info "Mode: Creating new sudo user"
+                log_info "Modus: Nieuwe sudo gebruiker aanmaken"
                 echo
 
-                # Get username
-                ADMIN_USER=$(questionnaire_prompt_string "New admin username" "admin")
+                ADMIN_USER=$(questionnaire_prompt_string "Gebruikersnaam nieuwe beheerder" "admin")
                 export ADMIN_USER
 
-                # Check if user already exists
                 if system_user_exists "$ADMIN_USER"; then
-                    log_warn "User '$ADMIN_USER' already exists!"
-                    if system_confirm "Do you want to change their password instead?" no; then
+                    log_warn "Gebruiker '$ADMIN_USER' bestaat al!"
+                    if system_confirm "Wachtwoord van deze gebruiker wijzigen?" no; then
                         export ADMIN_MODE_CREATE_USER="no"
                         break
                     else
@@ -118,39 +127,36 @@ questionnaire_run() {
                     fi
                 fi
 
-                # Get password
-                ADMIN_PASSWORD=$(questionnaire_prompt_password "Password for $ADMIN_USER")
+                ADMIN_PASSWORD=$(questionnaire_prompt_password "Wachtwoord voor $ADMIN_USER")
                 export ADMIN_PASSWORD
                 break
                 ;;
             2)
                 export ADMIN_MODE_CREATE_USER="no"
-                log_info "Mode: Changing password for existing user"
+                log_info "Modus: Wachtwoord wijzigen bestaande gebruiker"
                 echo
 
-                # Get existing username
                 while true; do
-                    ADMIN_USER=$(questionnaire_prompt_string "Existing sudo username" "root")
+                    ADMIN_USER=$(questionnaire_prompt_string "Gebruikersnaam bestaande sudo gebruiker" "root")
                     export ADMIN_USER
 
                     if system_user_exists "$ADMIN_USER"; then
                         break
                     fi
-                    log_warn "User '$ADMIN_USER' does not exist"
+                    log_warn "Gebruiker '$ADMIN_USER' bestaat niet"
                 done
 
-                # Get new password
-                ADMIN_PASSWORD=$(questionnaire_prompt_password "New password for $ADMIN_USER")
+                ADMIN_PASSWORD=$(questionnaire_prompt_password "Nieuw wachtwoord voor $ADMIN_USER")
                 export ADMIN_PASSWORD
                 break
                 ;;
             3)
                 export ADMIN_MODE_CREATE_USER="skip"
-                log_info "Mode: Skipping sudo user configuration"
+                log_info "Modus: Sudo gebruiker configuratie overgeslagen"
                 break
                 ;;
             *)
-                log_warn "Invalid choice. Enter 1, 2 or 3."
+                log_warn "Ongeldige keuze. Voer 1, 2 of 3 in."
                 ;;
         esac
     done
@@ -158,77 +164,135 @@ questionnaire_run() {
     fi  # end ADMIN_MODE_CREATE_USER != skip
 
     echo
+
+    # -------------------------------------------------------------------------
     # Section 2: System Configuration
-    log_info "Section 2: System Configuration"
+    # -------------------------------------------------------------------------
+    log_info "Sectie 2: Systeeminstellingen"
+    echo
+    echo "Basisidentiteit van de server: hostnaam, tijdzone en taal."
+    echo "De hostnaam wordt gebruikt in e-mailmeldingen en logregels."
+    echo "De tijdzone bepaalt de lokale tijd voor cron-jobs en logbestanden."
+    echo "Het log-niveau regelt hoeveel detail de toolkit naar het logbestand schrijft."
     echo
 
-    TOOLKIT_LOG_LEVEL=$(questionnaire_prompt_string "Log level" "info")
+    TOOLKIT_LOG_LEVEL=$(questionnaire_prompt_string "Log niveau (debug|info|warn|error)" "info")
     export TOOLKIT_LOG_LEVEL
 
-    HOSTNAME=$(questionnaire_prompt_string "Hostname" "server.local.lan")
+    HOSTNAME=$(questionnaire_prompt_string "Hostnaam van de server" "server.local.lan")
     export HOSTNAME
 
-    TIMEZONE=$(questionnaire_prompt_string "Timezone" "Europe/Amsterdam")
+    TIMEZONE=$(questionnaire_prompt_string "Tijdzone" "Europe/Amsterdam")
     export TIMEZONE
 
-    LOCALE=$(questionnaire_prompt_string "Locale" "nl_NL.UTF-8")
+    LOCALE=$(questionnaire_prompt_string "Systeemtaal (locale)" "nl_NL.UTF-8")
     export LOCALE
 
     echo
 
+    # -------------------------------------------------------------------------
     # Section 3: Network Configuration
-    log_info "Section 3: Network Configuration"
+    # -------------------------------------------------------------------------
+    log_info "Sectie 3: Netwerkconfiguratie"
+    echo
+    echo "Configuratie van het primaire netwerkinterface via Netplan."
+    echo "Kies DHCP als het netwerk automatisch een IP-adres toewijst."
+    echo "Kies statisch als de server altijd hetzelfde IP-adres moet hebben"
+    echo "(aanbevolen voor servers die bereikbaar moeten zijn op een vast adres)."
+    echo "Let op: een verkeerde netwerkconfiguratie kan de SSH-verbinding verbreken."
+    echo "De toolkit maakt automatisch een backup van de bestaande Netplan-config."
     echo
 
-    NETWORK_INTERFACE=$(questionnaire_prompt_string "Network interface" "ens3")
+    NETWORK_INTERFACE=$(questionnaire_prompt_string "Naam van het netwerkinterface" "ens3")
     export NETWORK_INTERFACE
 
-    USE_DHCP=$(questionnaire_prompt_string "Use DHCP? (true/false)" "false")
+    USE_DHCP=$(questionnaire_prompt_string "DHCP gebruiken? (true/false)" "false")
     export USE_DHCP
 
     if [ "$USE_DHCP" = "false" ]; then
-        IP_ADDRESS=$(questionnaire_prompt_string "IP address" "192.168.1.10")
+        IP_ADDRESS=$(questionnaire_prompt_string "Statisch IP-adres" "192.168.1.10")
         export IP_ADDRESS
 
-        PREFIX_LENGTH=$(questionnaire_prompt_string "Network prefix length" "24")
+        PREFIX_LENGTH=$(questionnaire_prompt_string "Netwerkprefix lengte (bijv. 24 voor /24)" "24")
         export PREFIX_LENGTH
 
-        GATEWAY=$(questionnaire_prompt_string "Gateway" "192.168.1.1")
+        GATEWAY=$(questionnaire_prompt_string "Standaard gateway" "192.168.1.1")
         export GATEWAY
 
-        DNS_SERVERS=$(questionnaire_prompt_string "DNS servers (space-separated)" "1.1.1.3 1.0.0.3")
+        DNS_SERVERS=$(questionnaire_prompt_string "DNS-servers (spatie-gescheiden)" "1.1.1.3 1.0.0.3")
         export DNS_SERVERS
     fi
 
     echo
 
+    # -------------------------------------------------------------------------
     # Section 4: Email and Alerts
-    log_info "Section 4: Email and Alerts Configuration"
+    # -------------------------------------------------------------------------
+    log_info "Sectie 4: E-mail en meldingen"
+    echo
+    echo "De toolkit configureert Postfix als SMTP-relay voor e-mailmeldingen."
+    echo "Je ontvangt dagelijkse rapportages over de serverstatus en directe"
+    echo "waarschuwingen bij hoge schijfbezetting of uitgevallen services."
+    echo "Vul het adres in van je eigen SMTP-relay (bijv. je mailprovider of"
+    echo "een interne mailserver). Authenticatiecredentials sla je op in"
+    echo "/etc/postfix/sasl_passwd na de installatie."
     echo
 
-    EMAIL_TO=$(questionnaire_prompt_string "Email for alerts" "admin@example.com")
+    EMAIL_TO=$(questionnaire_prompt_string "E-mailadres voor meldingen" "admin@example.com")
     export EMAIL_TO
 
-    SMTP_RELAY_HOST=$(questionnaire_prompt_string "SMTP relay host" "smtp.example.com")
+    SMTP_RELAY_HOST=$(questionnaire_prompt_string "SMTP relay hostname" "smtp.example.com")
     export SMTP_RELAY_HOST
 
-    SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay port" "587")
+    SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay poort" "587")
     export SMTP_RELAY_PORT
 
-    DISK_ALERT_THRESHOLD=$(questionnaire_prompt_string "Disk alert threshold (%)" "85")
+    DISK_ALERT_THRESHOLD=$(questionnaire_prompt_string "Schijfgebruik drempel voor melding (%)" "85")
     export DISK_ALERT_THRESHOLD
 
     echo
-
-    # Section 5: Security Updates
-    log_info "Section 5: Security Configuration"
+    echo "Na de installatie van Postfix kan een testmail verstuurd worden naar"
+    echo "$EMAIL_TO om te controleren of de mailrelay correct werkt."
     echo
 
-    AUTO_SECURITY_UPDATES=$(questionnaire_prompt_string "Enable auto security updates? (true/false)" "true")
+    while true; do
+        printf 'Testmail sturen na Postfix installatie? (ja/nee) [nee]: ' >&2
+        read -r test_mail_choice
+        test_mail_choice="${test_mail_choice:-nee}"
+        case "$test_mail_choice" in
+            ja|j|yes|y)
+                export SEND_TEST_MAIL="yes"
+                log_info "Testmail wordt verstuurd na Postfix configuratie"
+                break
+                ;;
+            nee|n|no)
+                export SEND_TEST_MAIL="no"
+                break
+                ;;
+            *)
+                log_warn "Ongeldige keuze. Voer 'ja' of 'nee' in."
+                ;;
+        esac
+    done
+
+    echo
+
+    # -------------------------------------------------------------------------
+    # Section 5: Security Updates
+    # -------------------------------------------------------------------------
+    log_info "Sectie 5: Beveiligingsupdates"
+    echo
+    echo "Unattended-upgrades installeert beveiligingsupdates automatisch,"
+    echo "zonder handmatige tussenkomst. Dit houdt de server up-to-date tegen"
+    echo "bekende kwetsbaarheden. Alleen beveiligingspakketten worden automatisch"
+    echo "bijgewerkt; grote versie-upgrades vereisen altijd handmatige actie."
+    echo
+
+    AUTO_SECURITY_UPDATES=$(questionnaire_prompt_string "Automatische beveiligingsupdates inschakelen? (true/false)" "true")
     export AUTO_SECURITY_UPDATES
 
     echo
-    log_info "Questionnaire complete. Setup will proceed with your answers."
+    log_info "Vragenlijst compleet. De installatie start met de opgegeven instellingen."
     echo
 }
 
@@ -312,6 +376,7 @@ EOF
     echo "EMAIL_TO=\"${EMAIL_TO:-admin@example.com}\"" >> "$conf_file"
     echo "SMTP_RELAY_HOST=\"${SMTP_RELAY_HOST:-smtp.example.com}\"" >> "$conf_file"
     echo "SMTP_RELAY_PORT=\"${SMTP_RELAY_PORT:-587}\"" >> "$conf_file"
+    echo "SEND_TEST_MAIL=\"${SEND_TEST_MAIL:-no}\"" >> "$conf_file"
 
     cat >> "$conf_file" <<'EOF'
 
@@ -332,5 +397,5 @@ EOF
     echo "AUTO_SECURITY_UPDATES=\"${AUTO_SECURITY_UPDATES:-true}\"" >> "$conf_file"
 
     chmod 600 "$conf_file"
-    log_info "Created config file: $conf_file (mode 600)"
+    log_info "Configuratiebestand aangemaakt: $conf_file (mode 600)"
 }
