@@ -123,6 +123,50 @@ read/write it; never hardcode the path.
 
 ---
 
+## Changelog maintenance
+
+Every code change should include a corresponding entry in `CHANGELOG.md` under
+the `[Unreleased]` section. The changelog follows the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
+**When to update the changelog:**
+- Any change to `scripts/`, `lib/`, `main.sh`, or `templates/`
+- Bug fixes, new features, breaking changes, deprecations
+- *Skip* for: README updates, docs-only changes (use `--no-verify` if needed)
+
+**How to add a changelog entry:**
+
+```markdown
+## [Unreleased]
+
+### Added
+- New feature description
+
+### Fixed
+- Bug description and fix applied
+
+### Changed
+- Modified behavior description
+
+### Removed
+- Deprecated feature or helper function
+```
+
+A pre-commit hook enforces this rule for code changes. If you commit a
+code change without updating the changelog, the hook will block the commit
+with instructions. To fix:
+
+```bash
+# 1. Update CHANGELOG.md with your changes
+# 2. Stage it:
+git add CHANGELOG.md
+# 3. Amend the commit:
+git commit --amend --no-edit
+# 4. Try committing again
+```
+
+---
+
 ## Commit message format
 
 Prefix the commit subject with the affected module in square brackets:
