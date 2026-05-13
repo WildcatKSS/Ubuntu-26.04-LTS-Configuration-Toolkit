@@ -9,7 +9,8 @@ on:
       - 'templates/**'
 
 permissions:
-  pull-requests: read
+  pull-requests: write
+  contents: read
 
 jobs:
   version-check:
@@ -24,8 +25,13 @@ jobs:
       - name: Get base version
         id: base-version
         run: |
-          git fetch origin main
-          BASE_VERSION=$(git show origin/main:VERSION)
+          # Get the base branch version (usually main)
+          BASE_REF="${{ github.base_ref }}"
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF="main"
+          fi
+          git fetch --depth=1 origin "$BASE_REF"
+          BASE_VERSION=$(git show origin/"$BASE_REF":VERSION 2>/dev/null || echo "unknown")
           echo "base-version=$BASE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Get PR version
@@ -70,11 +76,15 @@ jobs:
 
       - name: Check CHANGELOG updated
         run: |
-          if ! git diff origin/main..HEAD CHANGELOG.md | grep -q "## \[Unreleased\]"; then
+          BASE_REF="${{ github.base_ref }}"
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF="main"
+          fi
+          if git diff "origin/$BASE_REF"...HEAD -- CHANGELOG.md | grep -q "## \[Unreleased\]"; then
+            echo "✅ CHANGELOG.md appears to be updated"
+          else
             echo "⚠️  CHANGELOG.md should document changes under [Unreleased] section"
             echo "While not strictly enforced here, it helps with release notes"
-          else
-            echo "✅ CHANGELOG.md appears to be updated"
           fi
 
       - name: Comment on PR
