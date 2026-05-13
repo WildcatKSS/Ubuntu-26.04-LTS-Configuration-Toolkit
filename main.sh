@@ -338,6 +338,7 @@ main() {
 
     # Load and validate config
     local conf="$TOOLKIT_ROOT/config/defaults.conf"
+    local _questionnaire_done=0
     if [ ! -f "$conf" ]; then
         # Config doesn't exist; run questionnaire to generate it
         if [ "$FLAG_DRY_RUN" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ]; then
@@ -347,6 +348,7 @@ main() {
         fi
         log_info "Config file not found; running questionnaire to create it"
         questionnaire_run
+        _questionnaire_done=1
         questionnaire_create_config "$TOOLKIT_ROOT"
     fi
 
@@ -355,9 +357,11 @@ main() {
 
     state_init
 
-    # Run questionnaire for remaining prompts (admin user, etc.)
-    # unless in plan mode or non-interactive
-    questionnaire_run
+    # Run questionnaire for runtime prompts (admin credentials) unless already
+    # done this execution or in plan/non-interactive mode
+    if [ "$_questionnaire_done" -eq 0 ]; then
+        questionnaire_run
+    fi
 
     # Run modules
     local path
