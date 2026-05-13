@@ -69,6 +69,7 @@ Execution control:
   --only=<module>       Run only this module (and its prerequisites).
   --skip=<m1,m2,...>    Skip these modules (comma-separated short names).
   --ignore-errors       Continue when a non-critical module exits non-zero.
+  --test                Run end-to-end idempotency validation (CI/CD mode).
   -h, --help            Show this help and exit.
 ```
 
@@ -120,6 +121,22 @@ dependencies.
 Optional `scripts/hooks/pre-<module>.sh` and `scripts/hooks/post-<module>.sh`
 files run before/after the matching module. Hook failures are logged but never
 stop the run.
+
+### Validation
+
+Validate the toolkit locally without root:
+
+```bash
+bash -n scripts/*.sh lib/*.sh main.sh                    # syntax check
+shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh  # lint
+bats tests/                                               # unit tests
+```
+
+For end-to-end idempotency testing (run-twice-no-change) on a real or virtual Ubuntu Server 26.04 host:
+
+```bash
+sudo ./main.sh --test
+```
 
 ---
 
@@ -173,25 +190,6 @@ sudo -E ./main.sh
 Inspect the log for ERROR lines:
 ```bash
 grep ERROR /var/log/toolkit-setup/toolkit-setup.log
-```
-
----
-
-## Testing
-
-The repository includes BATS unit tests and can be validated locally without root:
-
-```bash
-bash -n scripts/*.sh lib/*.sh main.sh
-shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
-bats tests/
-```
-
-End-to-end idempotency testing (run-twice-no-change) requires a real or virtual Ubuntu Server 26.04 host.
-For CI/CD integration, the toolkit supports the `--test` flag for automated validation:
-
-```bash
-sudo ./main.sh --test
 ```
 
 ---
