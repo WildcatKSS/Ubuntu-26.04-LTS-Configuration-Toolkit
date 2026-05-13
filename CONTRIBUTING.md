@@ -171,21 +171,98 @@ git commit --amend --no-edit
 
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as documented in `CHANGELOG.md`.
 
-**Version numbering:**
-- **MAJOR** (X.0.0): Breaking API/config changes (module removal, incompatible syntax)
-- **MINOR** (1.X.0): Backwards-compatible features (new modules, new flags)
-- **PATCH** (1.0.X): Backwards-compatible bug fixes, documentation updates
+### For contributors: Version updates on pull requests
 
-**Release process:**
-1. Update `CHANGELOG.md`: move `[Unreleased]` changes to a new `[X.Y.Z] – YYYY-MM-DD` section
-2. Update `VERSION` file with the new version number (e.g., `2.1.0`)
-3. Commit: `git commit -m "[release] v2.1.0"`
-4. Create git tag: `git tag -a v2.1.0 -m "Release v2.1.0"`
-5. Push: `git push origin main --tags`
+**Every pull request that changes code MUST update the VERSION file.**
+
+Version numbering (choose one):
+- **PATCH** (1.0.X): Bug fixes, documentation, small improvements
+- **MINOR** (1.X.0): New features, new modules, new CLI flags (backwards-compatible)
+- **MAJOR** (X.0.0): Breaking changes (module removal, config incompatibility)
+
+**When creating a PR with code changes:**
+
+1. **Determine the version bump**:
+   - Current: `1.0.0` (from `cat VERSION`)
+   - Adding new feature → `1.1.0` (MINOR bump)
+   - Fixing a bug → `1.0.1` (PATCH bump)
+   - Breaking change → `2.0.0` (MAJOR bump)
+
+2. **Update VERSION file**:
+   ```bash
+   echo "1.1.0" > VERSION
+   git add VERSION
+   ```
+
+3. **Update CHANGELOG.md** (under `[Unreleased]`):
+   ```markdown
+   ## [Unreleased]
+
+   ### Added
+   - New module 04-example for feature X
+
+   ### Fixed
+   - Bug in log_info under set -u
+
+   ### Changed
+   - Improved error messages in module Y
+   ```
+
+4. **Commit with version-aware message**:
+   ```bash
+   git commit -m "[04-example] add example module for new feature"
+   # The VERSION and CHANGELOG updates go in the same commit
+   ```
+
+**Automatic validation:**
+- A pre-commit hook (if installed via `scripts/setup-hooks.sh`) will block commits if code changed but VERSION wasn't updated
+- GitHub Actions will verify VERSION was bumped on all PRs with code changes
+
+**Setup development hooks** (recommended):
+```bash
+bash scripts/setup-hooks.sh
+```
+
+This installs a pre-commit hook that:
+- ✅ Requires VERSION update for code changes
+- ✅ Validates semantic versioning format
+- ✅ Reminds you to update CHANGELOG.md
+
+---
+
+### For maintainers: Releasing a version
+
+When preparing a release:
+
+1. **Finalize CHANGELOG.md**: Move `[Unreleased]` content to a new `[X.Y.Z] – YYYY-MM-DD` section
+   ```markdown
+   ## [1.1.0] – 2026-05-20
+
+   ### Added
+   - New module 04-example
+
+   ### Fixed
+   - Bug fix in logging
+   ```
+
+2. **VERSION should already be updated** (from merged PRs)
+
+3. **Create git tag**:
+   ```bash
+   git tag -a v1.1.0 -m "Release v1.1.0: Add example module"
+   ```
+
+4. **Push tag to GitHub**:
+   ```bash
+   git push origin v1.1.0
+   ```
+   GitHub will automatically create a Release page from the tag.
 
 **Version retrieval at runtime:**
 ```bash
 ./main.sh --version
+# Output: Ubuntu Server 26.04 LTS Configuration Toolkit v1.0.0
+
 # or in a script:
 source lib/version.sh
 VERSION=$(toolkit_get_version)

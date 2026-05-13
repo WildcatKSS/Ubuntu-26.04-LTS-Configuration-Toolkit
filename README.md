@@ -24,6 +24,38 @@ git pull origin main
 
 ---
 
+## Development Setup (for contributors)
+
+If you're contributing code changes, set up development hooks:
+
+```bash
+bash scripts/setup-hooks.sh
+```
+
+This enables automatic checks for:
+- ✅ VERSION file updates on code changes
+- ✅ Semantic versioning validation
+- ✅ CHANGELOG.md updates
+
+**When making a PR**, update VERSION and CHANGELOG.md with your changes:
+```bash
+# See current version
+cat VERSION
+
+# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
+echo "1.1.0" > VERSION
+
+# Update CHANGELOG.md under [Unreleased] section
+vi CHANGELOG.md
+
+# Commit (hooks will validate)
+git commit -am "Your changes"
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+---
+
 ## Configuration
 
 All variables live in `config/defaults.conf` (gitignored — copy from
