@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # MODULE: 07-monitoring
 # DESC: Sysstat collection, custom rsyslog rules, logrotate policies
 # DEPENDS: 06-hardening

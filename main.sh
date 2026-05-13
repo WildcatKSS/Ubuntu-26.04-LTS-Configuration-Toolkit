@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# main.sh — Ubuntu Server 26.04 LTS Configuration Toolkit
+# Ubuntu Server 26.04 LTS Configuration Toolkit
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
 #
-# Auto-discovers scripts/*.sh, validates dependency DAG, and executes modules
-# in alphabetical order. See README.md for full documentation.
+# This program is licensed under the MIT License.
+# For the full license text, see LICENSE in the root directory.
+#
+# main.sh — Auto-discovers scripts/*.sh, validates dependency DAG, and executes
+# modules in alphabetical order. See README.md for full documentation.
 #
 # Usage:
 #   ./main.sh [--list] [--plan] [--dry-run] [--test] [--resume] [--force]

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # lib/state.sh — Persistent module state tracking
 #
 # State file lives at $TOOLKIT_PERSISTENT_DIR/.state (default

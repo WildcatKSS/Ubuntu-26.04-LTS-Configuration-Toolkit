@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # lib/pkg.sh — Package management helpers (apt wrappers)
 
 export DEBIAN_FRONTEND=noninteractive

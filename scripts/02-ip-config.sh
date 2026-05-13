@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # MODULE: 02-ip-config
 # DESC: Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore on failure
 # DEPENDS: 01-base-config

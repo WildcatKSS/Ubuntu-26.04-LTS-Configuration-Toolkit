@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# Copyright (c) 2025 WildcatKSS
+#
 # MODULE: 99-cleanup
 # DESC: apt autoremove/clean, service verification, completion banner
 # DEPENDS: 08-mail-alerting
