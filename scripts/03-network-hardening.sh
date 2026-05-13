@@ -16,9 +16,7 @@ source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # 1. Disable cloud-init
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would disable cloud-init"
-else
+if plan_action "disable cloud-init"; then
     if [ ! -f /etc/cloud/cloud-init.disabled ]; then
         mkdir -p /etc/cloud
         touch /etc/cloud/cloud-init.disabled
@@ -33,23 +31,17 @@ else
 fi
 
 # 2. Remove NetworkManager
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would purge network-manager if installed"
-else
+if plan_action "purge network-manager if installed"; then
     pkg_purge network-manager network-manager-gnome
 fi
 
 # 3. Enable systemd-networkd
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would ensure systemd-networkd is enabled and active"
-else
+if plan_action "ensure systemd-networkd is enabled and active"; then
     system_service_enable_start systemd-networkd || true
 fi
 
 # 4. UFW
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would configure UFW (default deny in / allow out, allow SSH)"
-else
+if plan_action "configure UFW (default deny in / allow out, allow SSH)"; then
     pkg_install ufw
     if ufw status 2>/dev/null | grep -q 'Status: active'; then
         log_info "UFW already active — verifying SSH rule"
@@ -67,9 +59,7 @@ else
 fi
 
 # 5. Disable IPv6 (sysctl + grub)
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would persistently disable IPv6"
-else
+if plan_action "persistently disable IPv6"; then
     cat >/etc/sysctl.d/99-ipv6.conf <<'EOF'
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
@@ -93,9 +83,7 @@ EOF
 fi
 
 # 6. Fail2ban
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install fail2ban and copy jail.local"
-else
+if plan_action "install fail2ban and copy jail.local"; then
     pkg_install fail2ban
     template="$TOOLKIT_ROOT/templates/fail2ban-jail.local"
     target="/etc/fail2ban/jail.local"
