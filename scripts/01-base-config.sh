@@ -23,50 +23,55 @@ else
     apt-get dist-upgrade -y
 fi
 
-# 2. Determine admin credentials
-if [ -n "${ADMIN_USER:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
-    log_info "Using ADMIN_USER from environment (unattended mode): $ADMIN_USER"
-elif [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would prompt interactively for ADMIN_USER and ADMIN_PASSWORD"
-    ADMIN_USER="${ADMIN_USER:-admin}"
-    ADMIN_PASSWORD=""
-else
-    printf 'Admin username [admin]: ' >&2
-    read -r ADMIN_USER
-    ADMIN_USER="${ADMIN_USER:-admin}"
-    while true; do
-        printf 'Password for %s: ' "$ADMIN_USER" >&2
-        read -rs ADMIN_PASSWORD; echo >&2
-        printf 'Confirm password: ' >&2
-        read -rs ADMIN_PASSWORD_CONFIRM; echo >&2
-        if [ "$ADMIN_PASSWORD" = "$ADMIN_PASSWORD_CONFIRM" ] && [ -n "$ADMIN_PASSWORD" ]; then
-            break
-        fi
-        log_warn "Passwords do not match (or empty); try again"
-    done
-    unset ADMIN_PASSWORD_CONFIRM
+# 2. Admin credentials (from questionnaire or environment)
+if [ -z "${ADMIN_USER:-}" ] || [ -z "${ADMIN_PASSWORD:-}" ]; then
+    log_error "ADMIN_USER and ADMIN_PASSWORD must be set (run questionnaire or set environment)"
+    exit 1
 fi
 
-# 3. Create user (idempotent)
+log_info "Admin user: $ADMIN_USER"
+
+# 3. Handle admin user based on mode
+ADMIN_MODE_CREATE_USER="${ADMIN_MODE_CREATE_USER:-yes}"
+
 if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would ensure user $ADMIN_USER exists and is in sudo group"
-elif system_user_exists "$ADMIN_USER"; then
-    log_info "User already exists: $ADMIN_USER"
-else
-    log_info "Creating user: $ADMIN_USER"
-    useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+    if [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
+        log_info "PLAN: would create user $ADMIN_USER and add to sudo group"
+    else
+        log_info "PLAN: would change password for user $ADMIN_USER"
+    fi
+elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
+    # Create new sudo user
+    if system_user_exists "$ADMIN_USER"; then
+        log_info "User already exists: $ADMIN_USER"
+    else
+        log_info "Creating user: $ADMIN_USER"
+        useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+    fi
+
+    # Set password
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
         echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        log_info "Password set for $ADMIN_USER"
     fi
-fi
 
-# 4. Sudo group membership (defensive — covers case where user pre-existed without sudo)
-if [ "$PLAN_MODE" != "1" ]; then
+    # Ensure sudo group membership
     if id -nG "$ADMIN_USER" | tr ' ' '\n' | grep -qx sudo; then
-        log_info "User $ADMIN_USER is already in sudo group"
+        log_info "User $ADMIN_USER is in sudo group"
     else
         usermod -aG sudo "$ADMIN_USER"
         log_info "Added $ADMIN_USER to sudo group"
+    fi
+else
+    # Change password for existing user
+    if ! system_user_exists "$ADMIN_USER"; then
+        log_error "User does not exist: $ADMIN_USER"
+        exit 1
+    fi
+
+    if [ -n "${ADMIN_PASSWORD:-}" ]; then
+        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        log_info "Password changed for $ADMIN_USER"
     fi
 fi
 

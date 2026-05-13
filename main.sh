@@ -331,16 +331,33 @@ main() {
         system_check_root || exit 1
     fi
 
+    # Load questionnaire library early for config generation
+    # shellcheck source=lib/questionnaire.sh
+    source "$TOOLKIT_ROOT/lib/questionnaire.sh"
+    export PLAN_MODE
+
     # Load and validate config
     local conf="$TOOLKIT_ROOT/config/defaults.conf"
     if [ ! -f "$conf" ]; then
-        log_error "Missing config: $conf  (copy from defaults.conf.example and edit)"
-        exit 1
+        # Config doesn't exist; run questionnaire to generate it
+        if [ "$FLAG_DRY_RUN" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ]; then
+            log_error "Config missing: $conf (required for dry-run/plan)"
+            log_error "Run interactively first: ./main.sh"
+            exit 1
+        fi
+        log_info "Config file not found; running questionnaire to create it"
+        questionnaire_run
+        questionnaire_create_config "$TOOLKIT_ROOT"
     fi
+
     config_load "$conf" || exit 1
     config_validate || exit 1
 
     state_init
+
+    # Run questionnaire for remaining prompts (admin user, etc.)
+    # unless in plan mode or non-interactive
+    questionnaire_run
 
     # Run modules
     local path
