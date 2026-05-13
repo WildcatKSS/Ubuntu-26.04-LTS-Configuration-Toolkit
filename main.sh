@@ -5,7 +5,7 @@
 # in alphabetical order. See README.md for full documentation.
 #
 # Usage:
-#   ./main.sh [--list] [--plan] [--dry-run] [--resume] [--force]
+#   ./main.sh [--list] [--plan] [--dry-run] [--test] [--resume] [--force]
 #             [--retry=<module>] [--only=<module>] [--skip=<modules>]
 #             [--ignore-errors]
 
@@ -32,6 +32,7 @@ export TOOLKIT_PERSISTENT_DIR TOOLKIT_LOG_FILE
 FLAG_LIST=0
 FLAG_PLAN=0
 FLAG_DRY_RUN=0
+FLAG_TEST=0
 FLAG_RESUME=0
 FLAG_FORCE=0
 FLAG_IGNORE_ERRORS=0
@@ -47,6 +48,8 @@ Inspection / preview:
   --list                Print discovered modules with metadata and exit.
   --plan                Read-only audit: modules report what they would change.
   --dry-run             Run scripts with bash -n (syntax check, no execution).
+  --test                Run syntax checks, linting, and BATS tests. Can combine
+                        with --plan or --dry-run.
 
 Execution control:
   --resume              Skip modules already recorded as complete.
@@ -65,6 +68,7 @@ while [ $# -gt 0 ]; do
         --list)           FLAG_LIST=1 ;;
         --plan)           FLAG_PLAN=1 ;;
         --dry-run)        FLAG_DRY_RUN=1 ;;
+        --test)           FLAG_TEST=1 ;;
         --resume)         FLAG_RESUME=1 ;;
         --force)          FLAG_FORCE=1 ;;
         --ignore-errors)  FLAG_IGNORE_ERRORS=1 ;;
@@ -198,6 +202,62 @@ print_listing() {
 }
 
 # ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
+run_tests() {
+    local failed=0
+
+    log_info "Running test suite..."
+    echo
+
+    # Syntax checks
+    log_info "[1/3] Bash syntax checks..."
+    if bash -n scripts/*.sh lib/*.sh main.sh 2>&1; then
+        log_info "  ✓ Syntax checks passed"
+    else
+        log_error "  ✗ Syntax checks failed"
+        failed=1
+    fi
+    echo
+
+    # ShellCheck linting
+    log_info "[2/3] ShellCheck linting..."
+    if command -v shellcheck >/dev/null 2>&1; then
+        if shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh 2>&1; then
+            log_info "  ✓ ShellCheck passed"
+        else
+            log_error "  ✗ ShellCheck found issues"
+            failed=1
+        fi
+    else
+        log_warn "  ⊘ ShellCheck not installed; skipping"
+    fi
+    echo
+
+    # BATS unit tests
+    log_info "[3/3] BATS unit tests..."
+    if command -v bats >/dev/null 2>&1; then
+        if bats tests/ 2>&1; then
+            log_info "  ✓ BATS tests passed"
+        else
+            log_error "  ✗ BATS tests failed"
+            failed=1
+        fi
+    else
+        log_warn "  ⊘ BATS not installed; skipping"
+    fi
+    echo
+
+    if [ "$failed" -eq 1 ]; then
+        log_error "Test suite failed"
+        return 1
+    fi
+
+    log_info "All tests passed"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Module execution
 # ---------------------------------------------------------------------------
 should_skip() {
@@ -310,6 +370,13 @@ main() {
 
     if ! validate_dag; then
         exit 2
+    fi
+
+    # Run tests if requested, or automatically with --plan/--dry-run
+    if [ "$FLAG_TEST" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+        if ! run_tests; then
+            exit 2
+        fi
     fi
 
     if [ "$FLAG_LIST" -eq 1 ]; then
