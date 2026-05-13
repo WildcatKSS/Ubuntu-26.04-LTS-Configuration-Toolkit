@@ -59,8 +59,8 @@ _log_write() {
     # the stack is one shorter, so fall back to BASH_SOURCE[2]. Both must
     # tolerate `set -u` from the calling shell.
     local caller=""
-    [[ -v BASH_SOURCE[3] ]] && caller="${BASH_SOURCE[3]}"
-    [[ -z "$caller" && -v BASH_SOURCE[2] ]] && caller="${BASH_SOURCE[2]}"
+    caller="${BASH_SOURCE[3]:-}"
+    [[ -z "$caller" ]] && caller="${BASH_SOURCE[2]:-}"
     caller="${caller##*/}"
     [ -z "$caller" ] && caller="main.sh"
     local line="[$timestamp] [$level] [$caller] $message"

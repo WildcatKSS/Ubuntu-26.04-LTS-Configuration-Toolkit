@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `lib/log.sh`: logging functions (`log_info`, `log_warn`, `log_error`) now work correctly when called from top-level scripts with `set -u` active.
+  Previously, the BASH_SOURCE array index checks could fail under strict variable mode.
+
+### Added
+- Pre-commit hook (`.git/hooks/pre-commit`) that enforces changelog updates for all code changes.
+  Developers must update `CHANGELOG.md` under `[Unreleased]` before committing code changes.
+- Changelog maintenance documentation in `CONTRIBUTING.md` with instructions for updating the changelog.
+
 ## [2.0.0] – Ubuntu 26.04 LTS Migration
 
 ### Changed
