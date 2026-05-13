@@ -317,15 +317,14 @@ questionnaire_create_config() {
 # ---------------------------------------------------------------------------
 EOF
 
+    # shellcheck disable=SC2129
     echo "ADMIN_MODE_CREATE_USER=\"${ADMIN_MODE_CREATE_USER:-yes}\"" >> "$conf_file"
-
     cat >> "$conf_file" <<'EOF'
 
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
 EOF
-
     echo "TOOLKIT_LOG_LEVEL=\"${TOOLKIT_LOG_LEVEL:-info}\"" >> "$conf_file"
 
     cat >> "$conf_file" <<'EOF'
