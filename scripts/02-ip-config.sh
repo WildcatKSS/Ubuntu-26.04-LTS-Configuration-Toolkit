@@ -16,9 +16,7 @@ source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # 1. Hostname
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would set hostname to $HOSTNAME"
-else
+if plan_action "set hostname to $HOSTNAME"; then
     if [ "$(hostname)" = "$HOSTNAME" ]; then
         log_info "Hostname already set: $HOSTNAME"
     else
@@ -43,9 +41,7 @@ fi
 
 # 3. Backup Netplan
 if [ ! -d /etc/netplan.backup ] && [ -d /etc/netplan ]; then
-    if [ "$PLAN_MODE" = "1" ]; then
-        log_info "PLAN: would back up /etc/netplan to /etc/netplan.backup"
-    else
+    if plan_action "back up /etc/netplan to /etc/netplan.backup"; then
         cp -a /etc/netplan /etc/netplan.backup
         log_info "Backed up /etc/netplan to /etc/netplan.backup"
     fi
@@ -64,50 +60,51 @@ else
     log_info "Using static-IP Netplan template"
     # Build YAML list for DNS servers
     dns_yaml=""
-    for srv in $DNS_SERVERS; do
-        dns_yaml+="          - $srv"$'\n'
-    done
+    if [ -z "$DNS_SERVERS" ]; then
+        log_warn "DNS_SERVERS is empty — using systemd-resolved defaults"
+    else
+        for srv in $DNS_SERVERS; do
+            dns_yaml+="          - $srv"$'\n'
+        done
+    fi
     export NETWORK_INTERFACE IP_ADDRESS PREFIX_LENGTH GATEWAY
     export DNS_SERVERS_YAML="${dns_yaml%$'\n'}"
 fi
 
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would render $template -> $target and run netplan apply"
-    exit 0
-fi
+if plan_action "render $template -> $target and run netplan apply"; then
+    tmp="$(mktemp)"
+    envsubst < "$template" > "$tmp"
+    chmod 0600 "$tmp"
 
-tmp="$(mktemp)"
-envsubst < "$template" > "$tmp"
-chmod 0600 "$tmp"
+    if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
+        log_info "Netplan config unchanged — skipping apply"
+        rm -f "$tmp"
+    else
+        install -m 0600 "$tmp" "$target"
+        rm -f "$tmp"
+        log_info "Wrote $target"
 
-if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
-    log_info "Netplan config unchanged — skipping apply"
-    rm -f "$tmp"
-else
-    install -m 0600 "$tmp" "$target"
-    rm -f "$tmp"
-    log_info "Wrote $target"
+        # 5. Apply with auto-restore on connectivity failure
+        if ! netplan apply 2>&1; then
+            log_error "netplan apply failed — restoring backup"
+            rm -f "$target"
+            cp -a /etc/netplan.backup/. /etc/netplan/
+            netplan apply || true
+            exit 1
+        fi
+        sleep 3
 
-    # 5. Apply with auto-restore on connectivity failure
-    if ! netplan apply 2>&1; then
-        log_error "netplan apply failed — restoring backup"
-        rm -f "$target"
-        cp -a /etc/netplan.backup/. /etc/netplan/
-        netplan apply || true
-        exit 1
+        target_ip="$GATEWAY"
+        [ "${USE_DHCP:-true}" = "true" ] && target_ip="8.8.8.8"
+        if ! timeout 30 bash -c "until ping -c1 -W1 $target_ip >/dev/null 2>&1; do sleep 1; done"; then
+            log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
+            rm -f "$target"
+            cp -a /etc/netplan.backup/. /etc/netplan/
+            netplan apply || true
+            exit 1
+        fi
+        log_info "Connectivity verified ($target_ip reachable)"
     fi
-    sleep 3
-
-    target_ip="$GATEWAY"
-    [ "${USE_DHCP:-true}" = "true" ] && target_ip="8.8.8.8"
-    if ! timeout 30 bash -c "until ping -c1 -W1 $target_ip >/dev/null 2>&1; do sleep 1; done"; then
-        log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
-        rm -f "$target"
-        cp -a /etc/netplan.backup/. /etc/netplan/
-        netplan apply || true
-        exit 1
-    fi
-    log_info "Connectivity verified ($target_ip reachable)"
 fi
 
 # 6. Verification (informational)

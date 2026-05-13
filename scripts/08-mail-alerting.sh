@@ -16,7 +16,7 @@ source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # Pre-seed postfix to avoid debconf prompts
-if [ "$PLAN_MODE" != "1" ]; then
+if plan_action "pre-seed postfix and install postfix/mailutils"; then
     debconf-set-selections <<EOF
 postfix postfix/main_mailer_type select Internet with smarthost
 postfix postfix/mailname string ${HOSTNAME}
@@ -28,9 +28,7 @@ fi
 # 1. Postfix main.cf from template
 target="/etc/postfix/main.cf"
 template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would render $template -> $target"
-else
+if plan_action "render $template -> $target"; then
     MAIL_DOMAIN="${HOSTNAME#*.}"
     export HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT
     tmp="$(mktemp)"
@@ -50,9 +48,7 @@ fi
 
 # 2. Environment file shared by report/alert scripts
 env_dir="/etc/toolkit-setup"
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would write $env_dir/{daily-report,disk-alert}.env"
-else
+if plan_action "write $env_dir/{daily-report,disk-alert}.env"; then
     mkdir -p "$env_dir"
     cat >"$env_dir/daily-report.env" <<EOF
 EMAIL_TO="${EMAIL_TO}"
@@ -65,9 +61,7 @@ EOF
 fi
 
 # 3. Daily report
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install /usr/local/bin/daily-report.sh and cron entry"
-else
+if plan_action "install /usr/local/bin/daily-report.sh and cron entry"; then
     install -m 0755 "$TOOLKIT_ROOT/templates/daily-report.sh" /usr/local/bin/daily-report.sh
     cat >/etc/cron.d/daily-report <<'EOF'
 # Daily server report — installed by ubuntu-26-toolkit
@@ -79,9 +73,7 @@ EOF
 fi
 
 # 4. Disk/service alerts
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install /usr/local/bin/disk-alert.sh and 15-min cron"
-else
+if plan_action "install /usr/local/bin/disk-alert.sh and 15-min cron"; then
     install -m 0755 "$TOOLKIT_ROOT/templates/disk-alert.sh" /usr/local/bin/disk-alert.sh
     cat >/etc/cron.d/disk-alert <<'EOF'
 # Disk usage and failed-service alert — installed by ubuntu-26-toolkit
@@ -94,15 +86,13 @@ fi
 
 # 5. Optional test mail
 if [ "${SEND_TEST_MAIL:-no}" = "yes" ]; then
-    if [ "$PLAN_MODE" = "1" ]; then
-        log_info "PLAN: would send test mail to ${EMAIL_TO}"
-    else
-        log_info "Testmail versturen naar ${EMAIL_TO}..."
-        if echo "Dit is een testmail van de Ubuntu 26.04 Toolkit op $(hostname). Postfix relay werkt correct." \
-            | mail -s "[toolkit] Postfix testmail van $(hostname)" "${EMAIL_TO}"; then
-            log_info "Testmail verstuurd naar ${EMAIL_TO}"
+    if plan_action "send test mail to ${EMAIL_TO}"; then
+        log_info "Sending test mail to ${EMAIL_TO}..."
+        if echo "This is a test mail from the Ubuntu 26.04 Toolkit on $(hostname). Postfix relay is working correctly." \
+            | mail -s "[toolkit] Postfix test mail from $(hostname)" "${EMAIL_TO}"; then
+            log_info "Test mail sent to ${EMAIL_TO}"
         else
-            log_warn "Testmail mislukt — controleer /var/log/mail.log en de SMTP-relay instellingen"
+            log_warn "Test mail failed — check /var/log/mail.log and SMTP relay settings"
         fi
     fi
 fi

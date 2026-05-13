@@ -20,5 +20,7 @@ source "$_lib_dir/system.sh"
 source "$_lib_dir/pkg.sh"
 # shellcheck source=state.sh
 source "$_lib_dir/state.sh"
+# shellcheck source=plan.sh
+source "$_lib_dir/plan.sh"
 
 unset _lib_dir

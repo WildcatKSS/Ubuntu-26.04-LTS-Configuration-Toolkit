@@ -16,9 +16,7 @@ source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # 1. apt update + upgrade
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would run apt-get update && apt-get upgrade -y && dist-upgrade"
-else
+if plan_action "apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y"; then
     pkg_update
     log_info "Running apt-get upgrade"
     apt-get upgrade -y
@@ -88,9 +86,7 @@ unset ADMIN_PASSWORD
 
 # 6. unattended-upgrades
 if [ "${AUTO_SECURITY_UPDATES:-true}" = "true" ]; then
-    if [ "$PLAN_MODE" = "1" ]; then
-        log_info "PLAN: would install and enable unattended-upgrades"
-    else
+    if plan_action "install and enable unattended-upgrades"; then
         pkg_install unattended-upgrades apt-listchanges
         if [ -f /etc/apt/apt.conf.d/20auto-upgrades ] \
            && grep -q 'APT::Periodic::Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
