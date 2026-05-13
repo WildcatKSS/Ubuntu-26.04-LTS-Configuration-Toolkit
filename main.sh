@@ -427,8 +427,8 @@ main() {
 
     log_info "$(toolkit_version_info)"
 
-    # Run tests if requested, or automatically with --plan/--dry-run
-    if [ "$FLAG_TEST" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+    # Run tests only if explicitly requested with --test flag
+    if [ "$FLAG_TEST" -eq 1 ]; then
         if ! run_tests; then
             exit 2
         fi

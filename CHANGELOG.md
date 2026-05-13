@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- New features or enhancements (update VERSION file when releasing)
+## [1.0.1] – 2026-05-13
 
 ### Changed
-- Modified behavior or improvements
+- Tests now run **only** with explicit `--test` flag
+  - Tests no longer run automatically with `--plan` or `--dry-run` flags
+  - Tests no longer run when main.sh is executed without flags (default behavior)
+  - This allows `--plan` and `--dry-run` to complete faster for quick audits
 
 ### Fixed
 - Bug fixes and corrections
