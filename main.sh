@@ -31,6 +31,10 @@ TOOLKIT_LOG_FILE="${TOOLKIT_LOG_FILE:-$TOOLKIT_PERSISTENT_DIR/toolkit-setup.log}
 TOOLKIT_LOCK="/tmp/.toolkit-lock"
 export TOOLKIT_PERSISTENT_DIR TOOLKIT_LOG_FILE
 
+# Best-effort: create the log dir so logs land in the file from the start.
+# Silent failure is fine — log.sh skips file writes when the dir is missing.
+mkdir -p "$TOOLKIT_PERSISTENT_DIR" 2>/dev/null || true
+
 # ---------------------------------------------------------------------------
 # Flags
 # ---------------------------------------------------------------------------

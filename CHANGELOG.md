@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `lib/log.sh`: logging functions (`log_info`, `log_warn`, `log_error`) now work correctly when called from top-level scripts with `set -u` active.
   Previously, the BASH_SOURCE array index checks could fail under strict variable mode.
+- `lib/log.sh`: `_log_write` now uses explicit array length checks instead of `${BASH_SOURCE[N]:-}`,
+  fixing the top-level-script regression test on bash 5.3+ where indirect array indexing under `set -u`
+  is stricter than in earlier versions.
+- `lib/log.sh`: file appends are now skipped when the log file's parent directory does not exist,
+  eliminating the spurious `No such file or directory` redirection error from bash itself.
+- `lib/log.sh`: `log_error` only prints the "Run grep ERROR …" recovery hint when the log file
+  actually exists, avoiding a misleading pointer to a non-existent path.
+- `main.sh`: creates `TOOLKIT_PERSISTENT_DIR` at startup (best-effort) so log writes succeed
+  from the first call, before the root-only setup steps run.
 
 ### Added
 - Pre-commit hook (`.git/hooks/pre-commit`) that enforces changelog updates for all code changes.

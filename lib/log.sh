@@ -53,19 +53,21 @@ _log_write() {
     _log_level_enabled "$level" || return 0
     local timestamp
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
-    # Identify the source file that emitted the log. With nested helper
-    # calls (main.sh -> run_module -> log_info -> _log_write) the original
-    # script sits at BASH_SOURCE[3]; for direct calls from a module body
-    # the stack is one shorter, so fall back to BASH_SOURCE[2]. Both must
-    # tolerate `set -u` from the calling shell.
-    local caller=""
-    caller="${BASH_SOURCE[3]:-}"
-    [[ -z "$caller" ]] && caller="${BASH_SOURCE[2]:-}"
+    # Walk the BASH_SOURCE stack from the deepest known level (run_module
+    # wrapper at index 3) down to direct callers (index 2). Use explicit
+    # length checks so we never touch an out-of-range index — bash 5.3
+    # made `${array[N]:-}` stricter under `set -u`.
+    local caller="" depth="${#BASH_SOURCE[@]}"
+    if (( depth > 3 )); then
+        caller="${BASH_SOURCE[3]}"
+    elif (( depth > 2 )); then
+        caller="${BASH_SOURCE[2]}"
+    fi
     caller="${caller##*/}"
     [ -z "$caller" ] && caller="main.sh"
     local line="[$timestamp] [$level] [$caller] $message"
     printf '%b%s%b\n' "$color" "$line" "$_LOG_COLOR_RESET" >&2
-    if [ -n "$TOOLKIT_LOG_FILE" ]; then
+    if [ -n "$TOOLKIT_LOG_FILE" ] && [ -d "${TOOLKIT_LOG_FILE%/*}" ]; then
         printf '%s\n' "$line" >> "$TOOLKIT_LOG_FILE" 2>/dev/null || true
     fi
 }
@@ -75,7 +77,7 @@ log_info()  { _log_write "INFO"  "$_LOG_COLOR_INFO"  "$*"; }
 log_warn()  { _log_write "WARN"  "$_LOG_COLOR_WARN"  "$*"; }
 log_error() {
     _log_write "ERROR" "$_LOG_COLOR_ERROR" "$*"
-    if [ -n "$TOOLKIT_LOG_FILE" ]; then
+    if [ -n "$TOOLKIT_LOG_FILE" ] && [ -f "$TOOLKIT_LOG_FILE" ]; then
         printf 'FAILURE: Run grep ERROR %s for details\n' "$TOOLKIT_LOG_FILE" >&2
     fi
 }
