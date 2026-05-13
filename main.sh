@@ -342,6 +342,12 @@ main() {
 
     state_init
 
+    # Load questionnaire library and run interactive setup (unless in plan mode or non-interactive)
+    # shellcheck source=lib/questionnaire.sh
+    source "$TOOLKIT_ROOT/lib/questionnaire.sh"
+    export PLAN_MODE
+    questionnaire_run
+
     # Run modules
     local path
     for path in "${MODULE_PATHS[@]}"; do
