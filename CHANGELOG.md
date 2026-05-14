@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] – 2026-05-14
+
+### Added
+- **Interactive Module Selection Questionnaire**
+  - New `questionnaire_ask_modules()` function in `lib/questionnaire.sh`
+  - Checkbox-style menu for intuitive module selection at startup
+  - Automatic dependency resolution with clear feedback on auto-selected modules
+  - Warning system for broken dependencies (when disabling modules that others depend on)
+  - Support for plan mode and non-interactive mode
+
+### Changed
+- **Module Selection**: Replaced command-line flags with interactive questionnaire
+  - Removed `--skip=<modules>` flag (use questionnaire instead)
+  - Removed `--only=<module>` flag (use questionnaire instead)
+  - Users now select modules interactively instead of remembering module names and using flags
+  - `--retry=<module>` flag still works (skips questionnaire, selects all modules)
+
+### Backward Compatibility
+- `--resume`, `--force` flags still work as before
+- `TOOLKIT_NONINTERACTIVE=1` skips questionnaire and enables all modules
+- `TOOLKIT_PLAN_MODE=1` skips questionnaire and shows all modules
+
 ## [1.0.2] – 2026-05-13
 
 ### Changed
