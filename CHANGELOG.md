@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] – 2026-05-14
+
+### Fixed
+- **Main Script Configuration Handling**
+  - `--plan` and `--dry-run` flags now work without pre-existing config file (use sensible defaults)
+  - Fixed config file error that blocked preview commands from running
+  - Improved error handling when config is missing in non-interactive modes
+
+- **Module Selection Order**
+  - Module selection menu now appears BEFORE configuration questions (improved UX)
+  - Users can see which modules they're configuring before answering config prompts
+  - Better intent and clearer flow for interactive setup
+
+- **Configuration Question Filtering**
+  - Config questions now filtered by selected modules
+  - Email/SMTP questions only shown if `08-mail-alerting` module is selected
+  - Eliminates irrelevant configuration prompts for unselected functionality
+  - Improved user experience for partial toolkit configurations
+
+### Changed
+- `questionnaire_run()` now accepts optional selected modules parameter
+- Config loading flow refactored for better handling of plan/dry-run modes
+- Enhanced sensible defaults for headless/automated deployments
+
 ## [1.1.0] – 2026-05-14
 
 ### Added
