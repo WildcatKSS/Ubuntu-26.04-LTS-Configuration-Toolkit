@@ -438,7 +438,9 @@ main() {
     # Load questionnaire library early for config generation
     # shellcheck source=lib/questionnaire.sh
     source "$TOOLKIT_ROOT/lib/questionnaire.sh"
-    [ "$FLAG_PLAN" -eq 1 ] && export TOOLKIT_PLAN_MODE=1
+    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+        export TOOLKIT_PLAN_MODE=1
+    fi
 
     # Load and validate config
     local conf="$TOOLKIT_ROOT/config/defaults.conf"
