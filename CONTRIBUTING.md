@@ -54,21 +54,17 @@ lib/common.sh sources:
    ...
    ```
 
-2. **Always** check state before changing state. Examples:
-   - `pkg_install` already skips already-installed packages — use it
-   - `system_file_install` only writes when the source/destination differ
-   - For custom checks: `grep -q FOO /etc/file || sed -i '...' /etc/file`
+2. Make the script executable: `chmod +x scripts/50-myfeature.sh`.
 
-3. Honour `TOOLKIT_PLAN_MODE=1`: when set, your module should print what it
-   *would* change but not perform writes.
+---
 
-4. Distinguish critical vs non-critical errors:
-   - Critical (data loss, broken system): `log_error "..."; exit 1`
-   - Non-critical (transient service issue): `log_warn "..."` and continue
+## Code style
 
-5. Add a BATS test in `tests/` if your module exposes helper functions.
-
-6. Make the script executable: `chmod +x scripts/50-myfeature.sh`.
+- **Always** `set -euo pipefail` at the top of executable scripts.
+- **Always** quote variable expansions: `"$VAR"`, `"${ARRAY[@]}"`.
+- Run `shellcheck -x -e SC1091,SC2034` on your script before committing.
+- Use `log_info`/`log_warn`/`log_error` instead of `echo`.
+- Use `pkg_install` / `system_file_install` rather than raw `apt-get` / `cp`.
 
 ---
 
@@ -108,6 +104,18 @@ Every module MUST be safe to run multiple times. The BATS test
 End-to-end idempotency (run-twice-no-change) is verified manually on a VM —
 see the README troubleshooting section for the procedure.
 
+**Always check state before changing state.** Examples:
+- `pkg_install` already skips already-installed packages — use it
+- `system_file_install` only writes when the source/destination differ
+- For custom checks: `grep -q FOO /etc/file || sed -i '...' /etc/file`
+
+**Honour `TOOLKIT_PLAN_MODE=1`:** when set, your module should print what it
+*would* change but not perform writes.
+
+**Distinguish critical vs non-critical errors:**
+- Critical (data loss, broken system): `log_error "..."; exit 1`
+- Non-critical (transient service issue): `log_warn "..."` and continue
+
 ---
 
 ## State persistence
@@ -118,13 +126,30 @@ read/write it; never hardcode the path.
 
 ---
 
-## Code style
+## Hooks
 
-- **Always** `set -euo pipefail` at the top of executable scripts.
-- **Always** quote variable expansions: `"$VAR"`, `"${ARRAY[@]}"`.
-- Run `shellcheck -x -e SC1091,SC2034` on your script before committing.
-- Use `log_info`/`log_warn`/`log_error` instead of `echo`.
-- Use `pkg_install` / `system_file_install` rather than raw `apt-get` / `cp`.
+Two optional hook locations are auto-discovered:
+
+```
+scripts/hooks/pre-<module-name>.sh
+scripts/hooks/post-<module-name>.sh
+```
+
+Hooks share the same metadata header convention but are non-critical: a hook
+that exits non-zero logs an ERROR and execution continues.
+
+---
+
+## Testing locally
+
+```bash
+sudo apt-get install -y shellcheck bats
+bash -n scripts/*.sh lib/*.sh main.sh
+shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
+bats tests/
+```
+
+Add a BATS test in `tests/` if your module exposes helper functions.
 
 ---
 
@@ -169,6 +194,20 @@ git add CHANGELOG.md
 git commit --amend --no-edit
 # 4. Try committing again
 ```
+
+---
+
+## Commit message format
+
+Prefix the commit subject with the affected module in square brackets:
+
+```
+[06-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
+[lib/state] fix race when promoting state file
+[lib/log] bump default log level
+```
+
+Keep the subject under 70 characters and explain the *why* in the body.
 
 ---
 
@@ -271,43 +310,4 @@ When preparing a release:
 # or in a script:
 source lib/version.sh
 VERSION=$(toolkit_get_version)
-```
-
----
-
-## Commit message format
-
-Prefix the commit subject with the affected module in square brackets:
-
-```
-[06-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
-[lib/state] fix race when promoting state file
-[lib/log] bump default log level
-```
-
-Keep the subject under 70 characters and explain the *why* in the body.
-
----
-
-## Hooks
-
-Two optional hook locations are auto-discovered:
-
-```
-scripts/hooks/pre-<module-name>.sh
-scripts/hooks/post-<module-name>.sh
-```
-
-Hooks share the same metadata header convention but are non-critical: a hook
-that exits non-zero logs an ERROR and execution continues.
-
----
-
-## Testing locally
-
-```bash
-sudo apt-get install -y shellcheck bats
-bash -n scripts/*.sh lib/*.sh main.sh
-shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
-bats tests/
 ```
