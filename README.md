@@ -45,7 +45,7 @@ cat VERSION
 # Update VERSION based on your changes (MAJOR.MINOR.PATCH)
 echo "1.1.0" > VERSION
 
-# Update CHANGELOG.md under [Unreleased] section
+# Update CHANGELOG.md under Releases section
 vi CHANGELOG.md
 
 # Commit (hooks will validate)

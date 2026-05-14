@@ -126,7 +126,7 @@ read/write it; never hardcode the path.
 ## Changelog maintenance
 
 Every code change should include a corresponding entry in `CHANGELOG.md` under
-the `[Unreleased]` section. The changelog follows the
+the `Releases` section. The changelog follows the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 **When to update the changelog:**
@@ -137,7 +137,7 @@ the `[Unreleased]` section. The changelog follows the
 **How to add a changelog entry:**
 
 ```markdown
-## [Unreleased]
+## Releases
 
 ### Added
 - New feature description
@@ -194,9 +194,9 @@ Version numbering (choose one):
    git add VERSION
    ```
 
-3. **Update CHANGELOG.md** (under `[Unreleased]`):
+3. **Update CHANGELOG.md** (under `Releases`):
    ```markdown
-   ## [Unreleased]
+   ## Releases
 
    ### Added
    - New module 04-example for feature X
@@ -234,9 +234,9 @@ This installs a pre-commit hook that:
 
 When preparing a release:
 
-1. **Finalize CHANGELOG.md**: Move `[Unreleased]` content to a new `[X.Y.Z] – YYYY-MM-DD` section
+1. **Finalize CHANGELOG.md**: Move `Releases` content to a new `X.Y.Z – YYYY-MM-DD` section
    ```markdown
-   ## [1.1.0] – 2026-05-20
+   ## 1.1.0 – 2026-05-20
 
    ### Added
    - New module 04-example
