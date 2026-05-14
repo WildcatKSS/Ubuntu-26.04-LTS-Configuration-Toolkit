@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 04-system-settings
-# DESC: Timezone, locale, NTP via chrony (replaces systemd-timesyncd)
-# DEPENDS: 03-network-hardening
-# IDEMPOTENT: yes
+# MODULE:      04-system-settings
+# SUMMARY:     Timezone, locale, NTP via chrony
+# DEPENDS:     03-network-hardening
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

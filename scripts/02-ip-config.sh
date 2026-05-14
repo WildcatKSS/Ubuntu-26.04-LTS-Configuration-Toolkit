@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 02-ip-config
-# DESC: Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore on failure
-# DEPENDS: 01-base-config
-# IDEMPOTENT: yes
+# MODULE:      02-ip-config
+# SUMMARY:     Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore
+# DEPENDS:     01-base-config
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

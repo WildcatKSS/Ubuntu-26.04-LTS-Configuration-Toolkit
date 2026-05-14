@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 00-preflight
-# DESC: Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks before any changes
-# DEPENDS:
-# IDEMPOTENT: yes
+# MODULE:      00-preflight
+# SUMMARY:     Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks
+# DEPENDS:     none
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

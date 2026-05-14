@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 07-monitoring
-# DESC: Sysstat collection, custom rsyslog rules, logrotate policies
-# DEPENDS: 06-hardening
-# IDEMPOTENT: yes
+# MODULE:      07-monitoring
+# SUMMARY:     Sysstat collection, rsyslog rules, logrotate policies
+# DEPENDS:     06-hardening
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

@@ -35,11 +35,16 @@ lib/common.sh sources:
 
    ```bash
    #!/usr/bin/env bash
-   # MODULE: 50-myfeature
-   # DESC: Short, one-line description
-   # DEPENDS: 05-packages
-   # IDEMPOTENT: yes
+   # SPDX-License-Identifier: MIT
+   # Copyright (c) 2025 WildcatKSS
+   # Ubuntu Server 26.04 LTS Configuration Toolkit
+   #
+   # MODULE:      50-myfeature
+   # SUMMARY:     Short, one-line description of the module
+   # DEPENDS:     05-packages
+   # IDEMPOTENT:  yes
    # DESTRUCTIVE: no
+   # ADDED:       1.1.0
 
    set -euo pipefail
    TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

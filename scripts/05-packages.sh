@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 05-packages
-# DESC: Install of standard package set
-# DEPENDS: 04-system-settings
-# IDEMPOTENT: yes
+# MODULE:      05-packages
+# SUMMARY:     Install standard package set
+# DEPENDS:     04-system-settings
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

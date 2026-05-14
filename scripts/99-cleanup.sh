@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 # Copyright (c) 2025 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 99-cleanup
-# DESC: apt autoremove/clean, service verification, completion banner
-# DEPENDS: 08-mail-alerting
-# IDEMPOTENT: yes
+# MODULE:      99-cleanup
+# SUMMARY:     apt autoremove/clean, service verification, banner
+# DEPENDS:     08-mail-alerting
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
