@@ -9,6 +9,7 @@
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0
+# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
