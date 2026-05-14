@@ -11,8 +11,7 @@
 #
 # Usage:
 #   ./main.sh [--list] [--plan] [--dry-run] [--test] [--resume] [--force]
-#             [--retry=<module>] [--only=<module>] [--skip=<modules>]
-#             [--ignore-errors]
+#             [--retry=<module>] [--ignore-errors]
 
 set -euo pipefail
 
@@ -48,8 +47,6 @@ FLAG_TEST=0
 FLAG_RESUME=0
 FLAG_FORCE=0
 FLAG_IGNORE_ERRORS=0
-ONLY_MODULE=""
-SKIP_MODULES=""
 RETRY_MODULE=""
 
 usage() {
@@ -67,8 +64,6 @@ Execution control:
   --resume              Skip modules already recorded as complete.
   --force               Re-run all modules, even completed ones.
   --retry=<module>      Re-run a single previously-failed module (resolves deps).
-  --only=<module>       Run only this module (and its prerequisites).
-  --skip=<m1,m2,...>    Skip these modules (comma-separated short names).
   --ignore-errors       Continue when a non-critical module exits non-zero.
 
   -h, --help            Show this help and exit.
@@ -85,8 +80,6 @@ while [ $# -gt 0 ]; do
         --resume)         FLAG_RESUME=1 ;;
         --force)          FLAG_FORCE=1 ;;
         --ignore-errors)  FLAG_IGNORE_ERRORS=1 ;;
-        --only=*)         ONLY_MODULE="${1#*=}" ;;
-        --skip=*)         SKIP_MODULES="${1#*=}" ;;
         --retry=*)        RETRY_MODULE="${1#*=}" ;;
         -h|--help)        usage; exit 0 ;;
         -v|--version)     toolkit_version_info; exit 0 ;;
@@ -100,6 +93,9 @@ if [ "$FLAG_FORCE" -eq 1 ] && [ "$FLAG_RESUME" -eq 1 ]; then
     log_warn "--force and --resume both set; --force wins"
     FLAG_RESUME=0
 fi
+
+# Selected modules (filled by questionnaire)
+declare -a SELECTED_MODULES=()
 
 # ---------------------------------------------------------------------------
 # Module discovery and metadata
@@ -316,16 +312,10 @@ run_tests() {
 should_skip() {
     local short="$1"
     local item
-    if [ -n "$SKIP_MODULES" ]; then
-        IFS=',' read -ra arr <<< "$SKIP_MODULES"
-        for item in "${arr[@]}"; do
-            [ "${item// /}" = "$short" ] && return 0
-        done
-    fi
-    if [ -n "$ONLY_MODULE" ] && [ -n "$RETRY_MODULE" ] && [ "$short" != "$ONLY_MODULE" ] && [ "$short" != "$RETRY_MODULE" ]; then
-        return 0
-    fi
-    return 1
+    for item in "${SELECTED_MODULES[@]}"; do
+        [ "$item" = "$short" ] && return 1
+    done
+    return 0
 }
 
 run_hook() {
@@ -342,7 +332,7 @@ run_module() {
     local short="${MODULE_NAME[$path]}"
 
     if should_skip "$short"; then
-        log_info "Skipping $short (--skip / --only filter)"
+        log_info "Skipping $short (not selected)"
         return 0
     fi
 
@@ -484,6 +474,12 @@ main() {
     if [ "$_questionnaire_done" -eq 0 ]; then
         questionnaire_run
     fi
+
+    # Ask user to select modules (unless in plan/non-interactive mode)
+    log_info "Loading module selection..."
+    while IFS= read -r module; do
+        SELECTED_MODULES+=("$module")
+    done < <(questionnaire_ask_modules)
 
     # Run modules
     local path

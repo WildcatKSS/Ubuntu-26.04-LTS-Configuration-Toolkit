@@ -299,6 +299,143 @@ questionnaire_run() {
     echo
 }
 
+# questionnaire_ask_modules
+# Interactive module selection menu with checkbox-style interface.
+# Handles dependency resolution and prevents invalid combinations.
+# Outputs selected module short names (one per line).
+# Note: Expects MODULE_DESC, MODULE_DEPENDS globals from main.sh
+questionnaire_ask_modules() {
+    if [ "${TOOLKIT_PLAN_MODE:-0}" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
+        log_info "Skipping module selection (plan mode or non-interactive) — enabling all modules"
+        for short in "${!MODULE_DESC[@]}"; do
+            echo "$short"
+        done
+        return 0
+    fi
+
+    echo
+    log_info "=== Module Selection ==="
+    echo
+    echo "Kies welke modules je wilt inschakelen."
+    echo "Modules met dependencies worden automatisch ingeschakeld."
+    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5"
+    echo
+
+    declare -g -A QUESTIONNAIRE_SELECTED=()
+    declare -a module_list=()
+    local index=0
+    local short
+
+    for short in "${!MODULE_DESC[@]}"; do
+        QUESTIONNAIRE_SELECTED[$short]=1
+        module_list+=("$short")
+    done
+
+    while true; do
+        echo "Huidige selectie:"
+        echo
+        index=0
+        for short in "${module_list[@]}"; do
+            local checkbox="[ ]"
+            [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && checkbox="[x]"
+            printf '%d) %s %s\n' "$index" "$checkbox" "$short"
+            printf '   %s\n' "${MODULE_DESC[$short]:-}"
+            local deps="${MODULE_DEPENDS[$short]:-}"
+            if [ -n "$deps" ]; then
+                printf '   Vereist: %s\n' "$deps"
+            fi
+            ((index++))
+        done
+        echo
+        printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: ' >&2
+        read -r input
+        [ -z "$input" ] && break
+
+        local to_toggle=()
+        IFS=',' read -ra to_toggle <<< "$input"
+
+        for num in "${to_toggle[@]}"; do
+            num="${num// /}"
+            if [ -n "$num" ] && [ "$num" -ge 0 ] 2>/dev/null && [ "$num" -lt "${#module_list[@]}" ] 2>/dev/null; then
+                local target="${module_list[$num]}"
+                if [ "${QUESTIONNAIRE_SELECTED[$target]:-0}" = "1" ]; then
+                    QUESTIONNAIRE_SELECTED[$target]=0
+                    log_info "Uitgeschakeld: $target"
+                    questionnaire_check_broken_deps "$target"
+                else
+                    QUESTIONNAIRE_SELECTED[$target]=1
+                    log_info "Ingeschakeld: $target"
+                    questionnaire_auto_select_deps "$target"
+                fi
+            else
+                log_warn "Ongeldig modulenummer: $num"
+            fi
+        done
+        echo
+    done
+
+    for short in "${module_list[@]}"; do
+        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && echo "$short"
+    done
+}
+
+# questionnaire_auto_select_deps <module_short>
+# Recursively select all dependencies of a module.
+questionnaire_auto_select_deps() {
+    local module="$1"
+    local deps="${MODULE_DEPENDS[$module]:-}"
+
+    if [ -z "$deps" ]; then
+        return 0
+    fi
+
+    local dep
+    local auto_selected=()
+    IFS=',' read -ra dep_array <<< "$deps"
+
+    for dep in "${dep_array[@]}"; do
+        dep="${dep// /}"
+        [ -z "$dep" ] && continue
+
+        if [ "${QUESTIONNAIRE_SELECTED[$dep]:-0}" != "1" ]; then
+            QUESTIONNAIRE_SELECTED[$dep]=1
+            auto_selected+=("$dep")
+            questionnaire_auto_select_deps "$dep"
+        fi
+    done
+
+    if [ "${#auto_selected[@]}" -gt 0 ]; then
+        log_info "  (automatisch geselecteerd: ${auto_selected[*]})"
+    fi
+}
+
+# questionnaire_check_broken_deps <module_short>
+# Warn if disabling a module breaks dependencies of other enabled modules.
+questionnaire_check_broken_deps() {
+    local module="$1"
+    local broken=()
+    local short
+
+    for short in "${!MODULE_DEPENDS[@]}"; do
+        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" != "1" ] && continue
+
+        local deps="${MODULE_DEPENDS[$short]:-}"
+        [ -z "$deps" ] && continue
+
+        if echo ",$deps," | grep -q ",$module,"; then
+            broken+=("$short")
+        fi
+    done
+
+    if [ "${#broken[@]}" -gt 0 ]; then
+        log_warn "⚠ Andere modules hebben $module nodig:"
+        for short in "${broken[@]}"; do
+            log_warn "  - $short"
+        done
+        log_warn "  Deze modules kunnen niet werken zonder $module."
+    fi
+}
+
 # questionnaire_create_config <toolkit_root>
 # Generate defaults.conf from questionnaire answers
 questionnaire_create_config() {
