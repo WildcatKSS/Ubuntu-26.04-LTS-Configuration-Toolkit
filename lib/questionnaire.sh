@@ -31,6 +31,29 @@
 #   AUTO_SECURITY_UPDATES       "true" or "false" for unattended upgrades
 #   SEND_TEST_MAIL              "yes" to send a test mail after postfix setup
 
+# config_create_defaults
+# Set sensible default environment variables for plan/dry-run modes
+# when config file doesn't exist yet.
+config_create_defaults() {
+    export ADMIN_MODE_CREATE_USER="yes"
+    export TOOLKIT_LOG_LEVEL="info"
+    export NETWORK_INTERFACE="ens3"
+    export USE_DHCP="false"
+    export IP_ADDRESS="192.168.1.10"
+    export PREFIX_LENGTH="24"
+    export GATEWAY="192.168.1.1"
+    export DNS_SERVERS="1.1.1.3 1.0.0.3"
+    export HOSTNAME="server.local.lan"
+    export TIMEZONE="Europe/Amsterdam"
+    export LOCALE="nl_NL.UTF-8"
+    export EMAIL_TO="admin@example.com"
+    export SMTP_RELAY_HOST="smtp.example.com"
+    export SMTP_RELAY_PORT="587"
+    export DISK_ALERT_THRESHOLD="85"
+    export AUTO_SECURITY_UPDATES="true"
+    export SEND_TEST_MAIL="no"
+}
+
 # questionnaire_prompt_string <prompt> [default]
 # Generic string prompt. Returns the answer or default if empty.
 questionnaire_prompt_string() {
@@ -72,9 +95,13 @@ questionnaire_prompt_password() {
     done
 }
 
-# questionnaire_run
-# Main questionnaire: prompts for all configuration needed across modules.
+# questionnaire_run [selected_modules_csv]
+# Main questionnaire: prompts for configuration needed by selected modules.
+# selected_modules_csv: comma-separated module names (e.g., "01-base-config,02-ip-config")
+#                       If provided, only asks for config relevant to those modules
 questionnaire_run() {
+    local selected_modules="${1:-}"
+
     if [ "${TOOLKIT_PLAN_MODE:-0}" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
         log_info "Skipping questionnaire (plan mode or non-interactive)"
         return 0
@@ -229,9 +256,10 @@ questionnaire_run() {
     echo
 
     # -------------------------------------------------------------------------
-    # Section 4: Email and Alerts
+    # Section 4: Email and Alerts (only if mail-alerting module is selected)
     # -------------------------------------------------------------------------
-    log_info "Sectie 4: E-mail en meldingen"
+    if [[ "$selected_modules" == *"08-mail-alerting"* ]] || [ -z "$selected_modules" ]; then
+        log_info "Sectie 4: E-mail en meldingen"
     echo
     echo "De toolkit configureert Postfix als SMTP-relay voor e-mailmeldingen."
     echo "Je ontvangt dagelijkse rapportages over de serverstatus en directe"
@@ -278,7 +306,8 @@ questionnaire_run() {
         esac
     done
 
-    echo
+        echo
+    fi  # end email section
 
     # -------------------------------------------------------------------------
     # Section 5: Security Updates

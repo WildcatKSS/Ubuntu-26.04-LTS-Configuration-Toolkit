@@ -444,34 +444,42 @@ main() {
     local conf="$TOOLKIT_ROOT/config/defaults.conf"
     local _questionnaire_done=0
     if [ ! -f "$conf" ]; then
-        # Config doesn't exist; run questionnaire to generate it
+        # Config doesn't exist
         if [ "$FLAG_DRY_RUN" -eq 1 ] || [ "$FLAG_PLAN" -eq 1 ]; then
-            log_error "Config missing: $conf (required for dry-run/plan)"
-            log_error "Run interactively first: ./main.sh"
-            exit 1
+            # For plan/dry-run, use sensible defaults and skip interactive questionnaire
+            log_info "Config missing; using sensible defaults for plan/dry-run mode"
+            config_create_defaults
+            _questionnaire_done=1
+        else
+            # For interactive mode, will prompt after module selection
+            log_info "Config file not found; will create after module selection"
+            _questionnaire_done=0
         fi
-        log_info "Config file not found; running questionnaire to create it"
-        questionnaire_run
-        _questionnaire_done=1
-        questionnaire_create_config "$TOOLKIT_ROOT"
+    else
+        config_load "$conf" || exit 1
+        config_validate || exit 1
     fi
-
-    config_load "$conf" || exit 1
-    config_validate || exit 1
 
     state_init
 
-    # Run questionnaire for runtime prompts (admin credentials) unless already
-    # done this execution or in plan/non-interactive mode
-    if [ "$_questionnaire_done" -eq 0 ]; then
-        questionnaire_run
-    fi
-
-    # Ask user to select modules (unless in plan/non-interactive mode)
+    # Ask user to select modules BEFORE running full questionnaire
+    # This way, module selection appears first, and questionnaire only asks
+    # for config relevant to selected modules
     log_info "Loading module selection..."
     while IFS= read -r module; do
         SELECTED_MODULES+=("$module")
     done < <(questionnaire_ask_modules)
+
+    # Run questionnaire for interactive setup unless already done (plan/dry-run modes)
+    if [ "$_questionnaire_done" -eq 0 ]; then
+        # Pass selected modules to questionnaire so it can skip irrelevant sections
+        local selected_csv
+        selected_csv="$(printf '%s,' "${SELECTED_MODULES[@]}" | sed 's/,$//')"
+        questionnaire_run "$selected_csv"
+        questionnaire_create_config "$TOOLKIT_ROOT"
+        config_load "$conf" || exit 1
+        config_validate || exit 1
+    fi
 
     # Run modules
     local path
