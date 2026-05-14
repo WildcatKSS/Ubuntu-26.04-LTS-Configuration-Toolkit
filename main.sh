@@ -11,7 +11,7 @@
 #
 # Usage:
 #   ./main.sh [--list] [--plan] [--dry-run] [--test] [--resume] [--force]
-#             [--retry=<module>] [--ignore-errors]
+#             [--ignore-errors]
 
 set -euo pipefail
 
@@ -47,7 +47,6 @@ FLAG_TEST=0
 FLAG_RESUME=0
 FLAG_FORCE=0
 FLAG_IGNORE_ERRORS=0
-RETRY_MODULE=""
 
 usage() {
     cat <<'EOF'
@@ -63,7 +62,6 @@ Inspection / preview:
 Execution control:
   --resume              Skip modules already recorded as complete.
   --force               Re-run all modules, even completed ones.
-  --retry=<module>      Re-run a single previously-failed module (resolves deps).
   --ignore-errors       Continue when a non-critical module exits non-zero.
 
   -h, --help            Show this help and exit.
@@ -80,7 +78,6 @@ while [ $# -gt 0 ]; do
         --resume)         FLAG_RESUME=1 ;;
         --force)          FLAG_FORCE=1 ;;
         --ignore-errors)  FLAG_IGNORE_ERRORS=1 ;;
-        --retry=*)        RETRY_MODULE="${1#*=}" ;;
         -h|--help)        usage; exit 0 ;;
         -v|--version)     toolkit_version_info; exit 0 ;;
         *) log_error "Unknown flag: $1"; usage; exit 2 ;;
@@ -341,11 +338,6 @@ run_module() {
         return 0
     fi
 
-    if [ -n "$RETRY_MODULE" ] && [ "$short" != "$RETRY_MODULE" ] && state_is_complete "$short"; then
-        log_info "Skipping $short (--retry only re-runs $RETRY_MODULE)"
-        return 0
-    fi
-
     if [ "$FLAG_DRY_RUN" -eq 1 ]; then
         log_info "Dry-run syntax check: $short"
         if ! bash -n "$path"; then
@@ -394,8 +386,8 @@ cleanup() {
         echo
         echo "Recovery hints:"
         echo "  - Inspect log: $TOOLKIT_LOG_FILE"
-        echo "  - Re-run failed module: ./main.sh --retry=<module>"
         echo "  - Resume after fix:     ./main.sh --resume"
+        echo "  - Re-run all modules:   ./main.sh --force"
     fi
     return 0
 }
@@ -475,19 +467,11 @@ main() {
         questionnaire_run
     fi
 
-    # Ask user to select modules (unless in plan/non-interactive mode or --retry mode)
-    if [ -z "$RETRY_MODULE" ]; then
-        log_info "Loading module selection..."
-        while IFS= read -r module; do
-            SELECTED_MODULES+=("$module")
-        done < <(questionnaire_ask_modules)
-    else
-        # In --retry mode, select all modules (filtering happens in run_module via RETRY_MODULE check)
-        log_info "Retry mode: selecting all modules (will retry only $RETRY_MODULE)"
-        for short in "${!MODULE_DESC[@]}"; do
-            SELECTED_MODULES+=("$short")
-        done
-    fi
+    # Ask user to select modules (unless in plan/non-interactive mode)
+    log_info "Loading module selection..."
+    while IFS= read -r module; do
+        SELECTED_MODULES+=("$module")
+    done < <(questionnaire_ask_modules)
 
     # Run modules
     local path
