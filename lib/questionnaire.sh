@@ -303,12 +303,13 @@ questionnaire_run() {
 # Interactive module selection menu with checkbox-style interface.
 # Handles dependency resolution and prevents invalid combinations.
 # Outputs selected module short names (one per line).
-# Note: Expects MODULE_DESC, MODULE_DEPENDS globals from main.sh
+# Note: Expects MODULE_PATHS, MODULE_NAME, MODULE_DESC, MODULE_DEPENDS globals from main.sh
 questionnaire_ask_modules() {
     if [ "${TOOLKIT_PLAN_MODE:-0}" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
         log_info "Skipping module selection (plan mode or non-interactive) — enabling all modules"
-        for short in "${!MODULE_DESC[@]}"; do
-            echo "$short"
+        local path
+        for path in "${MODULE_PATHS[@]}"; do
+            echo "${MODULE_NAME[$path]}"
         done
         return 0
     fi
@@ -324,9 +325,10 @@ questionnaire_ask_modules() {
     declare -g -A QUESTIONNAIRE_SELECTED=()
     declare -a module_list=()
     local index=0
-    local short
+    local path
 
-    for short in "${!MODULE_DESC[@]}"; do
+    for path in "${MODULE_PATHS[@]}"; do
+        local short="${MODULE_NAME[$path]}"
         QUESTIONNAIRE_SELECTED[$short]=1
         module_list+=("$short")
     done
