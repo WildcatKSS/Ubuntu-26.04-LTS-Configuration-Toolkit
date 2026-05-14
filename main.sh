@@ -475,11 +475,19 @@ main() {
         questionnaire_run
     fi
 
-    # Ask user to select modules (unless in plan/non-interactive mode)
-    log_info "Loading module selection..."
-    while IFS= read -r module; do
-        SELECTED_MODULES+=("$module")
-    done < <(questionnaire_ask_modules)
+    # Ask user to select modules (unless in plan/non-interactive mode or --retry mode)
+    if [ -z "$RETRY_MODULE" ]; then
+        log_info "Loading module selection..."
+        while IFS= read -r module; do
+            SELECTED_MODULES+=("$module")
+        done < <(questionnaire_ask_modules)
+    else
+        # In --retry mode, select all modules (filtering happens in run_module via RETRY_MODULE check)
+        log_info "Retry mode: selecting all modules (will retry only $RETRY_MODULE)"
+        for short in "${!MODULE_DESC[@]}"; do
+            SELECTED_MODULES+=("$short")
+        done
+    fi
 
     # Run modules
     local path
