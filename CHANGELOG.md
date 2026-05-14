@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] – 2026-05-14
+
+### Fixed
+- **Module Discovery Bug**
+  - Fixed `discover_modules()` incorrectly discovering `setup-hooks.sh` as a configuration module
+  - `setup-hooks.sh` (development utility) was being executed during toolkit runs, including `--plan` mode
+  - Restricted module discovery pattern to `[0-9][0-9]-*.sh` to match only numbered modules (00-99 range)
+  - Aligns with documented module naming convention
+
 ## [1.1.1] – 2026-05-14
 
 ### Fixed

@@ -126,7 +126,7 @@ discover_modules() {
         MODULE_DEPENDS[$short]="$deps"
         MODULE_IDEMPOTENT[$short]="$idem"
         MODULE_DESTRUCTIVE[$short]="$destr"
-    done < <(find "$TOOLKIT_ROOT/scripts" -maxdepth 1 -type f -name '*.sh' | sort)
+    done < <(find "$TOOLKIT_ROOT/scripts" -maxdepth 1 -type f -name '[0-9][0-9]-*.sh' | sort)
 }
 
 # Validate DAG: detect missing dependency targets and cycles.
