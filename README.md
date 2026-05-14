@@ -24,64 +24,6 @@ git pull origin main
 
 ---
 
-## Development Setup (for contributors)
-
-If you're contributing code changes, set up development hooks:
-
-```bash
-bash scripts/setup-hooks.sh
-```
-
-This enables automatic checks for:
-- ✅ VERSION file updates on code changes
-- ✅ Semantic versioning validation
-- ✅ CHANGELOG.md updates
-
-**When making a PR**, update VERSION and CHANGELOG.md with your changes:
-```bash
-# See current version
-cat VERSION
-
-# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
-echo "1.1.0" > VERSION
-
-# Update CHANGELOG.md under Releases section
-vi CHANGELOG.md
-
-# Commit (hooks will validate)
-git commit -am "Your changes"
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
----
-
-## Configuration
-
-All variables live in `config/defaults.conf` (gitignored — copy from
-`config/defaults.conf.example`). The most important fields:
-
-| Variable | Description |
-|---|---|
-| `NETWORK_INTERFACE` | Interface to configure (e.g. `ens3`) |
-| `USE_DHCP` | `true` for DHCP, `false` for static IP |
-| `IP_ADDRESS`, `PREFIX_LENGTH`, `GATEWAY`, `DNS_SERVERS` | Static IP fields |
-| `HOSTNAME` | FQDN for the host |
-| `TIMEZONE`, `LOCALE` | Locale settings |
-| `NTP_SERVERS`, `FALLBACK_NTP` | chrony servers |
-| `EMAIL_TO`, `SMTP_RELAY_HOST`, `SMTP_RELAY_PORT` | Mail relay |
-| `DISK_ALERT_THRESHOLD` | Disk-usage % that triggers an alert |
-
-The following values are **never stored in config files** — they are prompted
-interactively (or supplied via env var for unattended runs):
-
-| Env var | Used by | Effect |
-|---|---|---|
-| `ADMIN_USER`, `ADMIN_PASSWORD` | `01-base-config` | Create sudo user without prompting |
-| `TOOLKIT_NONINTERACTIVE=1` | All | Use defaults for any interactive prompt |
-
----
-
 ## Flags
 
 ```
@@ -112,17 +54,63 @@ Execution control:
 
 ---
 
+## Configuration
+
+All variables live in `config/defaults.conf` (gitignored — copy from
+`config/defaults.conf.example`). The most important fields:
+
+| Variable | Description |
+|---|---|
+| `NETWORK_INTERFACE` | Interface to configure (e.g. `ens3`) |
+| `USE_DHCP` | `true` for DHCP, `false` for static IP |
+| `IP_ADDRESS`, `PREFIX_LENGTH`, `GATEWAY`, `DNS_SERVERS` | Static IP fields |
+| `HOSTNAME` | FQDN for the host |
+| `TIMEZONE`, `LOCALE` | Locale settings |
+| `NTP_SERVERS`, `FALLBACK_NTP` | chrony servers |
+| `EMAIL_TO`, `SMTP_RELAY_HOST`, `SMTP_RELAY_PORT` | Mail relay |
+| `DISK_ALERT_THRESHOLD` | Disk-usage % that triggers an alert |
+
+The following values are **never stored in config files** — they are prompted
+interactively (or supplied via env var for unattended runs):
+
+| Env var | Used by | Effect |
+|---|---|---|
+| `ADMIN_USER`, `ADMIN_PASSWORD` | `01-base-config` | Create sudo user without prompting |
+| `TOOLKIT_NONINTERACTIVE=1` | All | Use defaults for any interactive prompt |
+
+---
+
+## Unattended mode
+
+```bash
+ADMIN_USER=sysadmin \
+ADMIN_PASSWORD='change-me-please' \
+TOOLKIT_NONINTERACTIVE=1 \
+sudo -E ./main.sh
+```
+
+Recommended secure pattern (avoids passwords in shell history):
+
+```bash
+chmod 600 .env
+set -a; source .env; set +a
+sudo -E ./main.sh
+```
+
+---
+
 ## Modules
 
 Modules live in `scripts/` and are auto-discovered alphabetically. Each module
 declares its metadata in a header:
 
 ```bash
-# MODULE: 06-hardening
-# DESC:   Kernel sysctl hardening, AppArmor verification, auditd setup
-# DEPENDS: 05-packages
-# IDEMPOTENT: yes
+# MODULE:      06-hardening
+# SUMMARY:     Kernel sysctl hardening, AppArmor verification, auditd setup
+# DEPENDS:     05-packages
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 ```
 
 | # | Script | What it does |
@@ -171,25 +159,6 @@ or `sudo ./main.sh --force` to re-run everything from scratch.
 
 ---
 
-## Unattended mode
-
-```bash
-ADMIN_USER=sysadmin \
-ADMIN_PASSWORD='change-me-please' \
-TOOLKIT_NONINTERACTIVE=1 \
-sudo -E ./main.sh
-```
-
-Recommended secure pattern (avoids passwords in shell history):
-
-```bash
-chmod 600 .env
-set -a; source .env; set +a
-sudo -E ./main.sh
-```
-
----
-
 ## Troubleshooting / quick recovery
 
 | Symptom | Fix |
@@ -203,6 +172,38 @@ Inspect the log for ERROR lines:
 ```bash
 grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 ```
+
+---
+
+## Development Setup (for contributors)
+
+If you're contributing code changes, set up development hooks:
+
+```bash
+bash scripts/setup-hooks.sh
+```
+
+This enables automatic checks for:
+- ✅ VERSION file updates on code changes
+- ✅ Semantic versioning validation
+- ✅ CHANGELOG.md updates
+
+**When making a PR**, update VERSION and CHANGELOG.md with your changes:
+```bash
+# See current version
+cat VERSION
+
+# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
+echo "1.1.0" > VERSION
+
+# Update CHANGELOG.md under Releases section
+vi CHANGELOG.md
+
+# Commit (hooks will validate)
+git commit -am "Your changes"
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
