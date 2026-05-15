@@ -115,19 +115,6 @@ questionnaire_run() {
     echo
 
     # -------------------------------------------------------------------------
-    # Section 0: Debug Level (first, so all logging is configured from the start)
-    # -------------------------------------------------------------------------
-    log_info "Sectie 0: Debug niveau"
-    echo
-    echo "Het log-niveau regelt hoeveel detail de toolkit naar het logbestand schrijft."
-    echo
-
-    TOOLKIT_LOG_LEVEL=$(questionnaire_prompt_string "Log niveau (debug|info|warn|error)" "debug")
-    export TOOLKIT_LOG_LEVEL
-
-    echo
-
-    # -------------------------------------------------------------------------
     # Section 1: Admin User
     # -------------------------------------------------------------------------
     log_info "Sectie 1: Beheerder (sudo gebruiker)"
@@ -510,7 +497,7 @@ EOF
 # Logging
 # ---------------------------------------------------------------------------
 EOF
-    echo "TOOLKIT_LOG_LEVEL=\"${TOOLKIT_LOG_LEVEL:-info}\"" >> "$conf_file"
+    echo "TOOLKIT_LOG_LEVEL=\"${TOOLKIT_LOG_LEVEL:-debug}\"" >> "$conf_file"
 
     cat >> "$conf_file" <<'EOF'
 
