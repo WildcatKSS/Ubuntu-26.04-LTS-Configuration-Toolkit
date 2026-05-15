@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
+## 1.2.0 – 2026-05-15
+
+### Added
+- **UFW SSH Rule Testing and Validation**
+  - Added explicit test to verify if SSH service is running before configuring firewall rules
+  - Logs info-level message when SSH is running
+  - Logs warning-level message when SSH is not running
+  - Ensures SSH rule (22/tcp) is always enabled in UFW by default
+  - Improved logging with descriptive status messages for idempotent operations
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
