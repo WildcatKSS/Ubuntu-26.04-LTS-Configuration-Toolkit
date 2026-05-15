@@ -38,18 +38,19 @@ detect_network_interface() {
     # Try to get first non-loopback interface from ip link
     iface=$(ip link show 2>/dev/null | grep -E "^[0-9]+:" | grep -v "lo:" | head -1 | sed 's/^[0-9]*: \([^:]*\).*/\1/')
 
-    # Fallback to common names if detection fails
+    # Fallback: scan /sys/class/net/ for any non-loopback interface
     if [ -z "$iface" ]; then
-        if [ -d /sys/class/net/ens3 ]; then
-            iface="ens3"
-        elif [ -d /sys/class/net/eth0 ]; then
-            iface="eth0"
-        elif [ -d /sys/class/net/enp0s3 ]; then
-            iface="enp0s3"
-        else
-            iface="ens3"  # Default fallback
-        fi
+        for iface in /sys/class/net/*; do
+            iface=$(basename "$iface")
+            [ "$iface" != "lo" ] && break
+        done
     fi
+
+    # Ultimate fallback if no interface found
+    if [ -z "$iface" ] || [ "$iface" = "lo" ]; then
+        iface="ens3"
+    fi
+
     echo "$iface"
 }
 
