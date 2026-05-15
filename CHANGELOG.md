@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Service Verification Check in Cleanup Module**
+  - Fixed systemctl service unit verification that was unreliable
+  - `systemctl list-unit-files` doesn't reliably indicate unit existence
+  - Changed to use `systemctl show` with LoadState check instead
+  - Ensures accurate detection of available services
+
+- **Cleanup Feedback Missing**
+  - Added info-level log message after apt autoremove/clean completion
+  - Provides clear feedback that cleanup operation succeeded
+  - Improves user visibility into module progress
+
 ## 1.1.8 – 2026-05-15
 
 ### Changed
