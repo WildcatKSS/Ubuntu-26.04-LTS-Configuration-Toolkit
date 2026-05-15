@@ -28,6 +28,15 @@ EOF
     pkg_install postfix mailutils bsd-mailx
 fi
 
+# Fix postfix chroot jail resolv.conf ownership (postfix may have wrong perms)
+if plan_action "fix postfix chroot jail /etc/resolv.conf ownership"; then
+    if [ -f /var/spool/postfix/etc/resolv.conf ]; then
+        chown root:root /var/spool/postfix/etc/resolv.conf
+        chmod 0644 /var/spool/postfix/etc/resolv.conf
+        log_info "Fixed ownership of /var/spool/postfix/etc/resolv.conf"
+    fi
+fi
+
 # 1. Postfix main.cf from template
 target="/etc/postfix/main.cf"
 template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
