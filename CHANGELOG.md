@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 1.1.7 – 2026-05-15
+## 1.1.6 – 2026-05-15
 
 ### Added
 - **Cascade Deselect for Module Dependencies**
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Cleaner, more compact display
 
 ### Fixed
-- **Module Selection Menu Display Bug**
+- **Module Selection Menu Display Bug (complete fix)**
   - Fixed main menu not waiting for user input and closing immediately
   - **Root cause #1:** `questionnaire_ask_modules()` was called via process
     substitution `< <(questionnaire_ask_modules)` in `main.sh`. Bash
@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Fix #3:** Added graceful fallback if `read` fails (non-interactive
     environment) — function continues with current selection instead of
     crashing the script
+  - **Fix #4:** Earlier attempt (1.1.6 partial) added `/dev/tty` read for
+    terminal access; superseded by direct function call approach
   - Menu now displays properly and correctly waits for user input
 
 - **Metadata Field Parser Bug (CRITICAL)**
@@ -58,11 +60,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact:** Cascade deselect and cascade auto-select features now work correctly
   - Fixes dependency resolution in questionnaire menus
 
+## 1.1.5 – 2026-05-15
+
+### Fixed
+- **Module Selection Menu Display Bug (partial fix)**
+  - `questionnaire_ask_modules()` was sending menu UI messages to stdout
+  - These messages were captured by the module selection read loop, breaking the interactive menu
+  - All informational output now correctly redirected to stderr
+  - Note: this fix proved insufficient; further root causes addressed in 1.1.6
+
+## 1.1.4 – 2026-05-15
+
+### Fixed
 - **Dependency Parser Bug**
   - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
   - Parser now correctly recognizes empty `DEPENDS:` field for modules with no dependencies
   - Resolves "missing module: none" and "dependency cycle detected" errors
   - Allows `--list`, `--plan`, `--dry-run` flags to work correctly
+
+## 1.1.3 – 2026-05-15
+
+### Fixed
+- **`--dry-run` Flag Consistency**
+  - Ensured `TOOLKIT_PLAN_MODE` consistency for `--dry-run` mode in `main.sh`
+  - Aligns dry-run behaviour with plan mode expectations
+
+### Changed
+- **Documentation Reorganisation**
+  - Reorganised README sections for better logical flow
+  - Reorganised CONTRIBUTING sections for better learning flow
+  - Removed deprecated flags from README documentation (`--retry`, `--only`, `--skip`)
+  - Added missing `-v`/`--version` flag to README
+
+### Removed
+- Outdated documentation references to deprecated CLI flags
+
+### Other
+- Updated copyright year from 2025 to 2026 across the project
 
 ## 1.1.2 – 2026-05-14
 
