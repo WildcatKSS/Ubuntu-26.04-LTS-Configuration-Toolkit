@@ -16,8 +16,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. apt update + upgrade
 if plan_action "apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y"; then
     pkg_update
@@ -95,7 +93,7 @@ if [ "${AUTO_SECURITY_UPDATES:-true}" = "true" ]; then
            && grep -q 'APT::Periodic::Unattended-Upgrade "1"' /etc/apt/apt.conf.d/20auto-upgrades; then
             log_info "unattended-upgrades already enabled"
         else
-            cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+            system_write_file "$TOOLKIT_APT_UPGRADES" 0644 <<'EOF'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
 APT::Periodic::AutocleanInterval "7";
