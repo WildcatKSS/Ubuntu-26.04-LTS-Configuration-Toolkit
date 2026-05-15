@@ -35,9 +35,6 @@ Inspection / preview:
 Execution control:
   --resume              Skip modules already recorded as complete.
   --force               Re-run all modules, even completed ones.
-  --retry=<module>      Re-run a single previously-failed module.
-  --only=<module>       Run only this module (and its prerequisites).
-  --skip=<m1,m2,...>    Skip these modules (comma-separated short names).
   --ignore-errors       Continue when a non-critical module exits non-zero.
   --test                Run end-to-end idempotency validation (CI/CD mode).
   -h, --help            Show this help and exit.
@@ -49,7 +46,6 @@ Execution control:
 |---|---|
 | `--force` + `--resume` | `--force` wins (re-run all) |
 | `--plan` + others | `--plan` wins (no changes) |
-| `--only` + `--skip` | `--skip` removes from the filtered set |
 | `--list` + others | `--list` only (print and exit) |
 
 ---
@@ -164,7 +160,7 @@ or `sudo ./main.sh --force` to re-run everything from scratch.
 | Symptom | Fix |
 |---|---|
 | Network broken after `02-ip-config` | `cp -a /etc/netplan.backup/. /etc/netplan/ && netplan apply` |
-| One module failed | `sudo ./main.sh --retry=<module-name>` |
+| One module failed | `sudo ./main.sh --resume` (continue from where it failed) |
 | Need to re-run from scratch | `sudo ./main.sh --force` |
 | `--list` shows wrong dependency | Inspect the `# DEPENDS:` header in the module |
 
