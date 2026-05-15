@@ -186,6 +186,7 @@ logparser_escape_json_string() {
 logparser_deduplicate_and_parse() {
 	local raw_entries="$1"
 	local entries_json="$2"
+	local metadata_file="$3"
 
 	if [ "$PLAN_MODE" = "1" ]; then
 		return 0
@@ -194,13 +195,16 @@ logparser_deduplicate_and_parse() {
 	log_info "Processing log entries..."
 
 	local -A entry_map
+	local -A severity_counts
+	local -A source_counts
 	local total_entries=0
 	local total_occurrences=0
+	local patterns_matched=0
 
 	while IFS='|' read -r source rest; do
 		[ -z "$source" ] && continue
 
-		local severity message msg_key
+		local severity message msg_key pattern
 
 		case "$source" in
 			journalctl)
@@ -234,11 +238,25 @@ logparser_deduplicate_and_parse() {
 			entry_map["$msg_key"]=$((entry_map["$msg_key"] + 1))
 		fi
 
+		severity_counts["$severity"]=$((${severity_counts["$severity"]:-0} + 1))
+		source_counts["$source"]=$((${source_counts["$source"]:-0} + 1))
 		total_occurrences=$((total_occurrences + 1))
 	done < "$raw_entries"
 
-	echo "$total_entries" > "$entries_json.metadata"
-	echo "$total_occurrences" >> "$entries_json.metadata"
+	echo "$total_entries" > "$metadata_file"
+	echo "$total_occurrences" >> "$metadata_file"
+
+	{
+		for sev in CRITICAL ERROR WARNING INFO; do
+			echo "${severity_counts[$sev]:-0}"
+		done
+	} >> "$metadata_file"
+
+	{
+		for src in "${!source_counts[@]}"; do
+			echo "$src:${source_counts[$src]}"
+		done
+	} >> "$metadata_file"
 
 	{
 		local first=true
@@ -252,10 +270,15 @@ logparser_deduplicate_and_parse() {
 				echo ","
 			fi
 
-			local msg_escaped
+			local msg_escaped pattern
 			msg_escaped=$(logparser_escape_json_string "$message")
 			local src_escaped
 			src_escaped=$(logparser_escape_json_string "$source")
+
+			pattern="null"
+			if logparser_match_pattern "$message" "apt-lock" >/dev/null 2>&1; then
+				pattern="apt-lock"
+			fi
 
 			echo -n "    {"
 			echo -n "\"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
@@ -263,7 +286,7 @@ logparser_deduplicate_and_parse() {
 			echo -n ", \"severity\": \"$severity\""
 			echo -n ", \"message\": \"$msg_escaped\""
 			echo -n ", \"occurrence_count\": $count"
-			echo -n ", \"matched_pattern\": null"
+			echo -n ", \"matched_pattern\": $pattern"
 			echo -n ", \"suggested_fixes\": []"
 			echo -n "}"
 		done
@@ -271,6 +294,9 @@ logparser_deduplicate_and_parse() {
 }
 
 logparser_write_json_report() {
+	local entries_json="$1"
+	local metadata_file="$2"
+
 	if [ "$PLAN_MODE" = "1" ]; then
 		log_info "PLAN: would write JSON report to $OUTPUT_FILE"
 		return 0
@@ -279,18 +305,28 @@ logparser_write_json_report() {
 	log_info "Generating JSON report..."
 
 	local tmp_file="$OUTPUT_FILE.tmp.$$"
-	local entries_json="$OUTPUT_FILE.entries.$$"
-	local metadata_file="$entries_json.metadata"
 
 	[ ! -f "$metadata_file" ] && {
 		echo "0" > "$metadata_file"
 		echo "0" >> "$metadata_file"
 	}
 
-	local total_unique
-	local total_occurrences
-	read total_unique < "$metadata_file"
-	read total_occurrences < "$metadata_file" || total_occurrences=0
+	local total_unique total_occurrences crit_count err_count warn_count info_count
+	{
+		read total_unique
+		read total_occurrences
+		read crit_count
+		read err_count
+		read warn_count
+		read info_count
+	} < "$metadata_file"
+
+	total_unique=${total_unique:-0}
+	total_occurrences=${total_occurrences:-0}
+	crit_count=${crit_count:-0}
+	err_count=${err_count:-0}
+	warn_count=${warn_count:-0}
+	info_count=${info_count:-0}
 
 	local start_time
 	start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -307,10 +343,10 @@ logparser_write_json_report() {
 		echo "    \"total_unique_entries\": $total_unique,"
 		echo "    \"total_occurrences\": $total_occurrences,"
 		echo "    \"by_severity\": {"
-		echo "      \"CRITICAL\": 0,"
-		echo "      \"ERROR\": 0,"
-		echo "      \"WARNING\": 0,"
-		echo "      \"INFO\": 0"
+		echo "      \"CRITICAL\": $crit_count,"
+		echo "      \"ERROR\": $err_count,"
+		echo "      \"WARNING\": $warn_count,"
+		echo "      \"INFO\": $info_count"
 		echo "    },"
 		echo "    \"by_source\": {},"
 		echo "    \"patterns_matched\": 0,"
@@ -345,7 +381,7 @@ logparser_generate_summary() {
 	fi
 
 	[ -f "$OUTPUT_FILE" ] && {
-		log_info "Log error parser module completed"
+		log_info "Log analyser module completed"
 	}
 }
 
@@ -379,17 +415,21 @@ main() {
 	logparser_scan_file_logs "$raw_scan_file"
 	logparser_scan_dmesg "$raw_scan_file"
 
-	if [ -f "$raw_scan_file" ] && [ -s "$raw_scan_file" ]; then
-		local entries_json
-		entries_json=$(mktemp)
-		TEMP_FILES+=("$entries_json")
+	local entries_json
+	local metadata_file
+	entries_json=$(mktemp)
+	metadata_file=$(mktemp)
+	TEMP_FILES+=("$entries_json" "$metadata_file")
 
-		logparser_deduplicate_and_parse "$raw_scan_file" "$entries_json"
-		logparser_write_json_report
+	if [ -f "$raw_scan_file" ] && [ -s "$raw_scan_file" ]; then
+		logparser_deduplicate_and_parse "$raw_scan_file" "$entries_json" "$metadata_file"
 	else
 		log_warn "No log entries found to process"
-		logparser_write_json_report
+		echo "0" > "$metadata_file"
+		echo "0" >> "$metadata_file"
 	fi
+
+	logparser_write_json_report "$entries_json" "$metadata_file"
 
 	logparser_generate_summary
 	state_mark_complete "98-log-analyser"
