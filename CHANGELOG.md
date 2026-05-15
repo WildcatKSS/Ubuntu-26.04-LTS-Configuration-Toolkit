@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 1.1.6 – 2026-05-15
+## 1.1.7 – 2026-05-15
 
 ### Added
 - **Cascade Deselect for Module Dependencies**
@@ -60,14 +60,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Impact:** Cascade deselect and cascade auto-select features now work correctly
   - Fixes dependency resolution in questionnaire menus
 
+## 1.1.6 – 2026-05-15
+
+### Fixed
+- **Module Selection Menu Display Bug (second partial attempt)**
+  - Tried reading from `/dev/tty` to access the terminal directly for menu input
+  - Worked around the immediate symptom but did not address the underlying
+    process-substitution / `set -e` root causes
+  - Superseded by the complete fix in 1.1.7
+
 ## 1.1.5 – 2026-05-15
 
 ### Fixed
-- **Module Selection Menu Display Bug (partial fix)**
+- **Module Selection Menu Display Bug (first partial attempt)**
   - `questionnaire_ask_modules()` was sending menu UI messages to stdout
   - These messages were captured by the module selection read loop, breaking the interactive menu
   - All informational output now correctly redirected to stderr
-  - Note: this fix proved insufficient; further root causes addressed in 1.1.6
+  - Note: this fix proved insufficient; further root causes addressed in 1.1.6 and 1.1.7
 
 ## 1.1.4 – 2026-05-15
 
@@ -91,11 +100,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reorganised CONTRIBUTING sections for better learning flow
   - Removed deprecated flags from README documentation (`--retry`, `--only`, `--skip`)
   - Added missing `-v`/`--version` flag to README
-
-### Removed
-- Outdated documentation references to deprecated CLI flags
-
-### Other
 - Updated copyright year from 2025 to 2026 across the project
 
 ## 1.1.2 – 2026-05-14
