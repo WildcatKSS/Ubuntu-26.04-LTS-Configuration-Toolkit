@@ -5,7 +5,7 @@
 #
 # MODULE:      04-system-settings
 # SUMMARY:     Timezone, locale, NTP via chrony
-# DEPENDS:     03-network-hardening
+# DEPENDS:     01-base-config
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0

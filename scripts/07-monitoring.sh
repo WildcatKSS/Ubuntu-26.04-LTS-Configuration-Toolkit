@@ -5,7 +5,7 @@
 #
 # MODULE:      07-monitoring
 # SUMMARY:     Sysstat collection, rsyslog rules, logrotate policies
-# DEPENDS:     06-hardening
+# DEPENDS:     05-packages
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0
