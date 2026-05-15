@@ -23,12 +23,13 @@ else
     log_info "Running apt autoremove + clean"
     run_quiet apt-get autoremove -y
     run_quiet apt-get clean
+    log_info "Cleanup complete"
 fi
 
 # Service verification
 SERVICES_TO_CHECK=(ssh chrony postfix auditd fail2ban ufw apparmor systemd-networkd)
 for svc in "${SERVICES_TO_CHECK[@]}"; do
-    if run_quiet systemctl list-unit-files "${svc}.service"; then
+    if systemctl show -p LoadState --value "$svc" 2>/dev/null | grep -q "^loaded"; then
         if systemctl is-active --quiet "$svc"; then
             log_info "service active: $svc"
         else
