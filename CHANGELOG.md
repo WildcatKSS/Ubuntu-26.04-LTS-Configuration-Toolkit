@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplifies setup flow by removing configuration question
 
 ### Fixed
+- **Admin User Question Always Asked**
+  - Removed conditional skip that prevented admin user question from being asked on subsequent runs
+  - Admin configuration question now always appears, allowing users to reconfigure settings
+  - Previously, selecting "skip" in the first run would cache the setting, preventing the question from appearing in future runs
+  
 - **Module Dependency DAG Optimization**
   - Fixed overly restrictive linear dependency chain where each module depended on the previous one
   - Corrected dependencies to only enforce actual requirements:
