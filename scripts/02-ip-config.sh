@@ -99,7 +99,7 @@ if plan_action "render $template -> $target and run netplan apply"; then
 
         target_ip="$GATEWAY"
         [ "${USE_DHCP:-true}" = "true" ] && target_ip="8.8.8.8"
-        if ! timeout 30 bash -c "until ping -c1 -W1 $target_ip >/dev/null 2>&1; do sleep 1; done"; then
+        if ! timeout 30 bash -c "until ping -c1 -W1 '$target_ip' >/dev/null 2>&1; do sleep 1; done"; then
             log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
             rm -f "$target"
             cp -a /etc/netplan.backup/. /etc/netplan/

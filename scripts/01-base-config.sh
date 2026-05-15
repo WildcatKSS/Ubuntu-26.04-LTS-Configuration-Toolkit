@@ -60,7 +60,7 @@ elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
 
     # Set password
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        run_quiet bash -c "echo '${ADMIN_USER}:${ADMIN_PASSWORD}' | chpasswd"
+        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
         log_info "Password set for $ADMIN_USER"
     fi
 
@@ -79,7 +79,7 @@ else
     fi
 
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        run_quiet bash -c "echo '${ADMIN_USER}:${ADMIN_PASSWORD}' | chpasswd"
+        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
         log_info "Password changed for $ADMIN_USER"
     fi
 fi

@@ -103,7 +103,10 @@ log_check_diskspace() {
 
 # run_quiet <command> [args...]
 # Execute a command silently (suppress stdout/stderr to /dev/null)
-# Only the exit code is returned; logs are still written if command fails
+# Exit code is preserved; critical for error handling with set -e
 run_quiet() {
+    local exit_code
     "$@" >/dev/null 2>&1
+    exit_code=$?
+    return "$exit_code"
 }
