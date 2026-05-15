@@ -363,7 +363,7 @@ questionnaire_ask_modules() {
     done
 
     while true; do
-        echo "Huidge selectie:" >&2
+        echo "Huisje selectie:" >&2
         echo >&2
         index=0
         for short in "${module_list[@]}"; do
@@ -379,7 +379,7 @@ questionnaire_ask_modules() {
         done
         echo >&2
         printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: ' >&2
-        read -r input
+        read -r input < /dev/tty || input=""
         [ -z "$input" ] && break
 
         local to_toggle=()
