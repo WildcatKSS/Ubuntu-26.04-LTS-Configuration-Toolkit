@@ -45,7 +45,7 @@ config_create_defaults() {
     export DNS_SERVERS="1.1.1.3 1.0.0.3"
     export HOSTNAME="server.local.lan"
     export TIMEZONE="Europe/Amsterdam"
-    export LOCALE="nl_NL.UTF-8"
+    export LOCALE="en_US.UTF-8"
     export EMAIL_TO="admin@example.com"
     export SMTP_RELAY_HOST="smtp.example.com"
     export SMTP_RELAY_PORT="587"
@@ -110,42 +110,42 @@ questionnaire_run() {
     echo
     log_info "=== Ubuntu Toolkit Interactive Setup ==="
     echo
-    echo "Dit script configureert een verse Ubuntu Server 26.04 LTS installatie end-to-end."
-    echo "Beantwoord de vragen per sectie. Druk op Enter om de standaardwaarde te accepteren."
+    echo "This script configures a fresh Ubuntu Server 26.04 LTS installation end-to-end."
+    echo "Answer the questions by section. Press Enter to accept the default value."
     echo
 
     # -------------------------------------------------------------------------
     # Section 1: Admin User
     # -------------------------------------------------------------------------
-    log_info "Sectie 1: Beheerder (sudo gebruiker)"
+    log_info "Section 1: Administrator (sudo user)"
     echo
-    echo "De toolkit maakt of configureert een gebruiker met sudo-rechten."
-    echo "Deze account wordt gebruikt voor beheer na de installatie."
-    echo "Root-login via SSH wordt na de installatie uitgeschakeld, dus"
-    echo "zorg dat deze gebruiker correct is ingesteld voordat je doorgaat."
+    echo "The toolkit creates or configures a user with sudo privileges."
+    echo "This account is used for management after installation."
+    echo "Root login via SSH will be disabled after installation, so"
+    echo "ensure this user is set up correctly before proceeding."
     echo
 
-    log_info "Wat wil je doen met de beheerder?"
-    echo "  1. Nieuwe sudo gebruiker aanmaken"
-    echo "  2. Wachtwoord wijzigen van een bestaande sudo gebruiker"
-    echo "  3. Overslaan (geen wijzigingen aan sudo gebruiker)"
+    log_info "What would you like to do with the administrator?"
+    echo "  1. Create new sudo user"
+    echo "  2. Change password for existing sudo user"
+    echo "  3. Skip (no changes to sudo user)"
     echo
 
     while true; do
-        printf 'Kies optie (1, 2 of 3): ' >&2
+        printf 'Choose option (1, 2 or 3): ' >&2
         read -r user_choice
         case "$user_choice" in
             1)
                 export ADMIN_MODE_CREATE_USER="yes"
-                log_info "Modus: Nieuwe sudo gebruiker aanmaken"
+                log_info "Mode: Create new sudo user"
                 echo
 
-                ADMIN_USER=$(questionnaire_prompt_string "Gebruikersnaam nieuwe beheerder" "admin")
+                ADMIN_USER=$(questionnaire_prompt_string "Username for new administrator" "admin")
                 export ADMIN_USER
 
                 if system_user_exists "$ADMIN_USER"; then
-                    log_warn "Gebruiker '$ADMIN_USER' bestaat al!"
-                    if system_confirm "Wachtwoord van deze gebruiker wijzigen?" no; then
+                    log_warn "User '$ADMIN_USER' already exists!"
+                    if system_confirm "Change password for this user?" no; then
                         export ADMIN_MODE_CREATE_USER="no"
                         break
                     else
@@ -153,36 +153,36 @@ questionnaire_run() {
                     fi
                 fi
 
-                ADMIN_PASSWORD=$(questionnaire_prompt_password "Wachtwoord voor $ADMIN_USER")
+                ADMIN_PASSWORD=$(questionnaire_prompt_password "Password for $ADMIN_USER")
                 export ADMIN_PASSWORD
                 break
                 ;;
             2)
                 export ADMIN_MODE_CREATE_USER="no"
-                log_info "Modus: Wachtwoord wijzigen bestaande gebruiker"
+                log_info "Mode: Change password for existing user"
                 echo
 
                 while true; do
-                    ADMIN_USER=$(questionnaire_prompt_string "Gebruikersnaam bestaande sudo gebruiker" "root")
+                    ADMIN_USER=$(questionnaire_prompt_string "Username of existing sudo user" "root")
                     export ADMIN_USER
 
                     if system_user_exists "$ADMIN_USER"; then
                         break
                     fi
-                    log_warn "Gebruiker '$ADMIN_USER' bestaat niet"
+                    log_warn "User '$ADMIN_USER' does not exist"
                 done
 
-                ADMIN_PASSWORD=$(questionnaire_prompt_password "Nieuw wachtwoord voor $ADMIN_USER")
+                ADMIN_PASSWORD=$(questionnaire_prompt_password "New password for $ADMIN_USER")
                 export ADMIN_PASSWORD
                 break
                 ;;
             3)
                 export ADMIN_MODE_CREATE_USER="skip"
-                log_info "Modus: Sudo gebruiker configuratie overgeslagen"
+                log_info "Mode: Skip sudo user configuration"
                 break
                 ;;
             *)
-                log_warn "Ongeldige keuze. Voer 1, 2 of 3 in."
+                log_warn "Invalid choice. Enter 1, 2 or 3."
                 ;;
         esac
     done
@@ -192,20 +192,20 @@ questionnaire_run() {
     # -------------------------------------------------------------------------
     # Section 2: System Configuration
     # -------------------------------------------------------------------------
-    log_info "Sectie 2: Systeeminstellingen"
+    log_info "Section 2: System settings"
     echo
-    echo "Basisidentiteit van de server: hostnaam, tijdzone en taal."
-    echo "De hostnaam wordt gebruikt in e-mailmeldingen en logregels."
-    echo "De tijdzone bepaalt de lokale tijd voor cron-jobs en logbestanden."
+    echo "Basic server identity: hostname, timezone and language."
+    echo "The hostname is used in email notifications and log entries."
+    echo "The timezone determines local time for cron jobs and logfiles."
     echo
 
-    HOSTNAME=$(questionnaire_prompt_string "Hostnaam van de server" "server.local.lan")
+    HOSTNAME=$(questionnaire_prompt_string "Hostname of the server" "server.local.lan")
     export HOSTNAME
 
-    TIMEZONE=$(questionnaire_prompt_string "Tijdzone" "Europe/Amsterdam")
+    TIMEZONE=$(questionnaire_prompt_string "Timezone" "Europe/Amsterdam")
     export TIMEZONE
 
-    LOCALE=$(questionnaire_prompt_string "Systeemtaal (locale)" "nl_NL.UTF-8")
+    LOCALE=$(questionnaire_prompt_string "System language (locale)" "en_US.UTF-8")
     export LOCALE
 
     echo
@@ -213,33 +213,33 @@ questionnaire_run() {
     # -------------------------------------------------------------------------
     # Section 3: Network Configuration
     # -------------------------------------------------------------------------
-    log_info "Sectie 3: Netwerkconfiguratie"
+    log_info "Section 3: Network configuration"
     echo
-    echo "Configuratie van het primaire netwerkinterface via Netplan."
-    echo "Kies DHCP als het netwerk automatisch een IP-adres toewijst."
-    echo "Kies statisch als de server altijd hetzelfde IP-adres moet hebben"
-    echo "(aanbevolen voor servers die bereikbaar moeten zijn op een vast adres)."
-    echo "Let op: een verkeerde netwerkconfiguratie kan de SSH-verbinding verbreken."
-    echo "De toolkit maakt automatisch een backup van de bestaande Netplan-config."
+    echo "Configuration of the primary network interface via Netplan."
+    echo "Choose DHCP if the network automatically assigns an IP address."
+    echo "Choose static if the server must always have the same IP address"
+    echo "(recommended for servers that must be reachable at a fixed address)."
+    echo "Warning: incorrect network configuration can break SSH connection."
+    echo "The toolkit automatically backs up the existing Netplan configuration."
     echo
 
-    NETWORK_INTERFACE=$(questionnaire_prompt_string "Naam van het netwerkinterface" "ens3")
+    NETWORK_INTERFACE=$(questionnaire_prompt_string "Network interface name" "ens3")
     export NETWORK_INTERFACE
 
-    USE_DHCP=$(questionnaire_prompt_string "DHCP gebruiken? (true/false)" "true")
+    USE_DHCP=$(questionnaire_prompt_string "Use DHCP? (true/false)" "true")
     export USE_DHCP
 
     if [ "$USE_DHCP" = "false" ]; then
-        IP_ADDRESS=$(questionnaire_prompt_string "Statisch IP-adres" "192.168.1.100")
+        IP_ADDRESS=$(questionnaire_prompt_string "Static IP address" "192.168.1.100")
         export IP_ADDRESS
 
-        PREFIX_LENGTH=$(questionnaire_prompt_string "Netwerkprefix lengte (bijv. 24 voor /24)" "24")
+        PREFIX_LENGTH=$(questionnaire_prompt_string "Network prefix length (e.g. 24 for /24)" "24")
         export PREFIX_LENGTH
 
-        GATEWAY=$(questionnaire_prompt_string "Standaard gateway" "192.168.1.1")
+        GATEWAY=$(questionnaire_prompt_string "Default gateway" "192.168.1.1")
         export GATEWAY
 
-        DNS_SERVERS=$(questionnaire_prompt_string "DNS-servers (spatie-gescheiden)" "1.1.1.3 1.0.0.3")
+        DNS_SERVERS=$(questionnaire_prompt_string "DNS servers (space-separated)" "1.1.1.3 1.0.0.3")
         export DNS_SERVERS
     fi
 
@@ -249,49 +249,49 @@ questionnaire_run() {
     # Section 4: Email and Alerts (only if mail-alerting module is selected)
     # -------------------------------------------------------------------------
     if [[ "$selected_modules" == *"08-mail-alerting"* ]] || [ -z "$selected_modules" ]; then
-        log_info "Sectie 4: E-mail en meldingen"
+        log_info "Section 4: Email and alerts"
     echo
-    echo "De toolkit configureert Postfix als SMTP-relay voor e-mailmeldingen."
-    echo "Je ontvangt dagelijkse rapportages over de serverstatus en directe"
-    echo "waarschuwingen bij hoge schijfbezetting of uitgevallen services."
-    echo "Vul het adres in van je eigen SMTP-relay (bijv. je mailprovider of"
-    echo "een interne mailserver). Authenticatiecredentials sla je op in"
-    echo "/etc/postfix/sasl_passwd na de installatie."
+    echo "The toolkit configures Postfix as an SMTP relay for email notifications."
+    echo "You will receive daily reports on server status and immediate"
+    echo "alerts for high disk usage or failed services."
+    echo "Enter the address of your own SMTP relay (e.g. your mail provider or"
+    echo "an internal mail server). Store authentication credentials in"
+    echo "/etc/postfix/sasl_passwd after installation."
     echo
 
-    EMAIL_TO=$(questionnaire_prompt_string "E-mailadres voor meldingen" "admin@example.com")
+    EMAIL_TO=$(questionnaire_prompt_string "Email address for alerts" "admin@example.com")
     export EMAIL_TO
 
     SMTP_RELAY_HOST=$(questionnaire_prompt_string "SMTP relay hostname" "smtp.example.com")
     export SMTP_RELAY_HOST
 
-    SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay poort" "587")
+    SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay port" "587")
     export SMTP_RELAY_PORT
 
-    DISK_ALERT_THRESHOLD=$(questionnaire_prompt_string "Schijfgebruik drempel voor melding (%)" "85")
+    DISK_ALERT_THRESHOLD=$(questionnaire_prompt_string "Disk usage threshold for alert (%)" "85")
     export DISK_ALERT_THRESHOLD
 
     echo
-    echo "Na de installatie van Postfix kan een testmail verstuurd worden naar"
-    echo "$EMAIL_TO om te controleren of de mailrelay correct werkt."
+    echo "After Postfix installation, a test mail can be sent to"
+    echo "$EMAIL_TO to verify the mail relay works correctly."
     echo
 
     while true; do
-        printf 'Testmail sturen na Postfix installatie? (ja/nee) [nee]: ' >&2
+        printf 'Send test mail after Postfix installation? (yes/no) [no]: ' >&2
         read -r test_mail_choice
-        test_mail_choice="${test_mail_choice:-nee}"
+        test_mail_choice="${test_mail_choice:-no}"
         case "$test_mail_choice" in
-            ja|j|yes|y)
+            yes|y)
                 export SEND_TEST_MAIL="yes"
-                log_info "Testmail wordt verstuurd na Postfix configuratie"
+                log_info "Test mail will be sent after Postfix configuration"
                 break
                 ;;
-            nee|n|no)
+            no|n)
                 export SEND_TEST_MAIL="no"
                 break
                 ;;
             *)
-                log_warn "Ongeldige keuze. Voer 'ja' of 'nee' in."
+                log_warn "Invalid choice. Enter 'yes' or 'no'."
                 ;;
         esac
     done
@@ -302,19 +302,19 @@ questionnaire_run() {
     # -------------------------------------------------------------------------
     # Section 5: Security Updates
     # -------------------------------------------------------------------------
-    log_info "Sectie 5: Beveiligingsupdates"
+    log_info "Section 5: Security updates"
     echo
-    echo "Unattended-upgrades installeert beveiligingsupdates automatisch,"
-    echo "zonder handmatige tussenkomst. Dit houdt de server up-to-date tegen"
-    echo "bekende kwetsbaarheden. Alleen beveiligingspakketten worden automatisch"
-    echo "bijgewerkt; grote versie-upgrades vereisen altijd handmatige actie."
+    echo "Unattended-upgrades installs security updates automatically,"
+    echo "without manual intervention. This keeps the server up-to-date against"
+    echo "known vulnerabilities. Only security packages are automatically"
+    echo "updated; major version upgrades always require manual action."
     echo
 
-    AUTO_SECURITY_UPDATES=$(questionnaire_prompt_string "Automatische beveiligingsupdates inschakelen? (true/false)" "true")
+    AUTO_SECURITY_UPDATES=$(questionnaire_prompt_string "Enable automatic security updates? (true/false)" "true")
     export AUTO_SECURITY_UPDATES
 
     echo
-    log_info "Vragenlijst compleet. De installatie start met de opgegeven instellingen."
+    log_info "Questionnaire complete. Installation will proceed with your settings."
     echo
 }
 
@@ -341,9 +341,9 @@ questionnaire_ask_modules() {
     echo
     log_info "=== Module Selection ==="
     echo
-    echo "Kies welke modules je wilt inschakelen."
-    echo "Modules met dependencies worden automatisch ingeschakeld."
-    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5"
+    echo "Choose which modules you want to enable."
+    echo "Modules with dependencies are automatically enabled."
+    echo "Enter module numbers (comma-separated) to toggle in/out, e.g.: 1,3,5"
     echo
 
     declare -g -A QUESTIONNAIRE_SELECTED=()
@@ -358,23 +358,23 @@ questionnaire_ask_modules() {
     done
 
     while true; do
-        echo "Huidige selectie:"
+        echo "Current selection:"
         index=0
         for short in "${module_list[@]}"; do
             local checkbox="[ ]"
             [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && checkbox="[x]"
             local deps="${MODULE_DEPENDS[$short]:-}"
             if [ -n "$deps" ]; then
-                printf '%d) %s %-25s (vereist: %s)\n' "$index" "$checkbox" "$short" "$deps"
+                printf '%d) %s %-25s (requires: %s)\n' "$index" "$checkbox" "$short" "$deps"
             else
                 printf '%d) %s %s\n' "$index" "$checkbox" "$short"
             fi
             index=$((index + 1))
         done
         echo
-        printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: '
+        printf 'Toggle modules (numbers separated by comma), or press Enter to continue: '
         if ! read -r input; then
-            log_warn "Kon niet van stdin lezen (niet-interactieve omgeving?). Doorgaan met huidige selectie."
+            log_warn "Could not read from stdin (non-interactive environment?). Continuing with current selection."
             break
         fi
         [ -z "$input" ] && break
@@ -388,16 +388,16 @@ questionnaire_ask_modules() {
                 local target="${module_list[$num]}"
                 if [ "${QUESTIONNAIRE_SELECTED[$target]:-0}" = "1" ]; then
                     QUESTIONNAIRE_SELECTED[$target]=0
-                    log_info "Uitgeschakeld: $target"
+                    log_info "Disabled: $target"
                     questionnaire_check_broken_deps "$target"
                     questionnaire_deselect_dependents "$target"
                 else
                     QUESTIONNAIRE_SELECTED[$target]=1
-                    log_info "Ingeschakeld: $target"
+                    log_info "Enabled: $target"
                     questionnaire_auto_select_deps "$target"
                 fi
             else
-                log_warn "Ongeldig modulenummer: $num"
+                log_warn "Invalid module number: $num"
             fi
         done
         echo
@@ -434,7 +434,7 @@ questionnaire_auto_select_deps() {
     done
 
     if [ "${#auto_selected[@]}" -gt 0 ]; then
-        log_info "  (automatisch geselecteerd: ${auto_selected[*]})"
+        log_info "  (automatically selected: ${auto_selected[*]})"
     fi
 }
 
@@ -457,11 +457,11 @@ questionnaire_check_broken_deps() {
     done
 
     if [ "${#broken[@]}" -gt 0 ]; then
-        log_warn "⚠ Andere modules hebben $module nodig:"
+        log_warn "⚠ Other modules require $module:"
         for short in "${broken[@]}"; do
             log_warn "  - $short"
         done
-        log_warn "  Deze modules kunnen niet werken zonder $module."
+        log_warn "  These modules cannot work without $module."
     fi
 }
 
@@ -522,17 +522,17 @@ EOF
 # Time / NTP
 # ---------------------------------------------------------------------------
 NTP_SERVERS=(
-  "0.nl.pool.ntp.org"
-  "1.nl.pool.ntp.org"
-  "2.nl.pool.ntp.org"
-  "3.nl.pool.ntp.org"
+  "0.pool.ntp.org"
+  "1.pool.ntp.org"
+  "2.pool.ntp.org"
+  "3.pool.ntp.org"
 )
 FALLBACK_NTP="time.cloudflare.com time.google.com"
 
 EOF
 
     echo "TIMEZONE=\"${TIMEZONE:-Europe/Amsterdam}\"" >> "$conf_file"
-    echo "LOCALE=\"${LOCALE:-nl_NL.UTF-8}\"" >> "$conf_file"
+    echo "LOCALE=\"${LOCALE:-en_US.UTF-8}\"" >> "$conf_file"
 
     cat >> "$conf_file" <<'EOF'
 
@@ -565,7 +565,7 @@ EOF
     echo "AUTO_SECURITY_UPDATES=\"${AUTO_SECURITY_UPDATES:-true}\"" >> "$conf_file"
 
     chmod 600 "$conf_file"
-    log_info "Configuratiebestand aangemaakt: $conf_file (mode 600)"
+    log_info "Configuration file created: $conf_file (mode 600)"
 }
 
 # questionnaire_deselect_dependents <module_short>
@@ -576,13 +576,13 @@ questionnaire_deselect_dependents() {
 
     for short in "${!MODULE_DEPENDS[@]}"; do
         [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" != "1" ] && continue
-        
+
         local deps="${MODULE_DEPENDS[$short]:-}"
         [ -z "$deps" ] && continue
 
         if echo ",$deps," | grep -q ",$module,"; then
             QUESTIONNAIRE_SELECTED[$short]=0
-            log_info "  (ook uitgeschakeld: $short — het vereist $module)"
+            log_info "  (also disabled: $short — it requires $module)"
             questionnaire_deselect_dependents "$short"
         fi
     done
