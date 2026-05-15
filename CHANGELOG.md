@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
+## [Unreleased]
+
+### Fixed
+- **Dependency Parser Bug**
+  - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
+  - Parser now correctly recognizes empty `DEPENDS:` field for modules with no dependencies
+  - Resolves "missing module: none" and "dependency cycle detected" errors
+  - Allows `--list`, `--plan`, `--dry-run` flags to work correctly
+
 ## 1.1.2 – 2026-05-14
 
 ### Fixed
