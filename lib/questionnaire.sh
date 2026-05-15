@@ -39,7 +39,7 @@ config_create_defaults() {
     export TOOLKIT_LOG_LEVEL="debug"
     export NETWORK_INTERFACE="ens3"
     export USE_DHCP="true"
-    export IP_ADDRESS="192.168.1.10"
+    export IP_ADDRESS="192.168.1.100"
     export PREFIX_LENGTH="24"
     export GATEWAY="192.168.1.1"
     export DNS_SERVERS="1.1.1.3 1.0.0.3"
@@ -230,7 +230,7 @@ questionnaire_run() {
     export USE_DHCP
 
     if [ "$USE_DHCP" = "false" ]; then
-        IP_ADDRESS=$(questionnaire_prompt_string "Statisch IP-adres" "192.168.1.10")
+        IP_ADDRESS=$(questionnaire_prompt_string "Statisch IP-adres" "192.168.1.100")
         export IP_ADDRESS
 
         PREFIX_LENGTH=$(questionnaire_prompt_string "Netwerkprefix lengte (bijv. 24 voor /24)" "24")
@@ -502,7 +502,7 @@ EOF
 
     echo "NETWORK_INTERFACE=\"${NETWORK_INTERFACE:-ens3}\"" >> "$conf_file"
     echo "USE_DHCP=\"${USE_DHCP:-false}\"" >> "$conf_file"
-    echo "IP_ADDRESS=\"${IP_ADDRESS:-192.168.1.10}\"" >> "$conf_file"
+    echo "IP_ADDRESS=\"${IP_ADDRESS:-192.168.1.100}\"" >> "$conf_file"
     echo "PREFIX_LENGTH=\"${PREFIX_LENGTH:-24}\"" >> "$conf_file"
     echo "GATEWAY=\"${GATEWAY:-192.168.1.1}\"" >> "$conf_file"
     echo "DNS_SERVERS=\"${DNS_SERVERS:-1.1.1.3 1.0.0.3}\"" >> "$conf_file"
