@@ -46,18 +46,30 @@ fi
 # 4. UFW
 if plan_action "configure UFW (default deny in / allow out, allow SSH)"; then
     pkg_install ufw
+
+    # Test if SSH is running
+    if systemctl is-active --quiet ssh; then
+        log_info "SSH service is running"
+    else
+        log_warn "SSH service is not running"
+    fi
+
     if run_quiet ufw status | grep -q 'Status: active'; then
         log_info "UFW already active — verifying SSH rule"
     else
         run_quiet ufw --force reset
         run_quiet ufw default deny incoming
         run_quiet ufw default allow outgoing
-        run_quiet ufw allow 22/tcp comment 'SSH'
         run_quiet ufw --force enable
-        log_info "UFW enabled with SSH rule"
+        log_info "UFW enabled with default deny/allow"
     fi
+
+    # Enable SSH rule by default
     if ! run_quiet ufw status | grep -q '22/tcp'; then
         run_quiet ufw allow 22/tcp comment 'SSH'
+        log_info "SSH rule (22/tcp) enabled"
+    else
+        log_info "SSH rule (22/tcp) already enabled"
     fi
 fi
 
