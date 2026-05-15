@@ -275,25 +275,8 @@ questionnaire_run() {
     echo "$EMAIL_TO to verify the mail relay works correctly."
     echo
 
-    while true; do
-        printf 'Send test mail after Postfix installation? (yes/no) [no]: ' >&2
-        read -r test_mail_choice
-        test_mail_choice="${test_mail_choice:-no}"
-        case "$test_mail_choice" in
-            yes|y)
-                export SEND_TEST_MAIL="yes"
-                log_info "Test mail will be sent after Postfix configuration"
-                break
-                ;;
-            no|n)
-                export SEND_TEST_MAIL="no"
-                break
-                ;;
-            *)
-                log_warn "Invalid choice. Enter 'yes' or 'no'."
-                ;;
-        esac
-    done
+    SEND_TEST_MAIL=$(questionnaire_prompt_string "Send test mail after Postfix installation? (true/false)" "false")
+    export SEND_TEST_MAIL
 
         echo
     fi  # end email section
