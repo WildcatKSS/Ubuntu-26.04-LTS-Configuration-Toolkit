@@ -21,11 +21,11 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would set timezone to $TIMEZONE"
 else
-    current_tz="$(timedatectl show --value -p Timezone 2>/dev/null || echo unknown)"
+    current_tz="$(run_quiet timedatectl show --value -p Timezone || echo unknown)"
     if [ "$current_tz" = "$TIMEZONE" ]; then
         log_info "Timezone already set: $TIMEZONE"
     else
-        timedatectl set-timezone "$TIMEZONE"
+        run_quiet timedatectl set-timezone "$TIMEZONE"
         log_info "Timezone set: $TIMEZONE"
     fi
 fi
@@ -34,17 +34,17 @@ fi
 if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would generate locale $LOCALE and set as default"
 else
-    if locale -a 2>/dev/null | grep -qi "^${LOCALE//-/}$\|^${LOCALE}$"; then
+    if run_quiet locale -a | grep -qi "^${LOCALE//-/}$\|^${LOCALE}$"; then
         log_info "Locale already generated: $LOCALE"
     else
         if [ -f /etc/locale.gen ]; then
             sed -i "s/^# *${LOCALE}/${LOCALE}/" /etc/locale.gen || true
             grep -q "^${LOCALE}" /etc/locale.gen || echo "${LOCALE} UTF-8" >> /etc/locale.gen
         fi
-        locale-gen "$LOCALE" >/dev/null
+        run_quiet locale-gen "$LOCALE"
         log_info "Locale generated: $LOCALE"
     fi
-    update-locale "LANG=$LOCALE" >/dev/null
+    run_quiet update-locale "LANG=$LOCALE"
 fi
 
 # 3. NTP via chrony
@@ -84,13 +84,13 @@ EOF
         fi
         install -m 0644 "$tmp" "$chrony_conf"
         rm -f "$tmp"
-        systemctl restart chrony 2>/dev/null || systemctl restart chronyd 2>/dev/null \
+        run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
             || log_warn "chrony restart failed"
     fi
     system_service_enable_start chrony || system_service_enable_start chronyd || true
 
     if command -v chronyc >/dev/null 2>&1; then
-        chronyc tracking 2>/dev/null | sed 's/^/  /' || true
+        run_quiet chronyc tracking | sed 's/^/  /' || true
     fi
 fi
 

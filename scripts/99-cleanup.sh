@@ -21,14 +21,14 @@ if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would run apt autoremove + clean and verify service status"
 else
     log_info "Running apt autoremove + clean"
-    apt-get autoremove -y
-    apt-get clean
+    run_quiet apt-get autoremove -y
+    run_quiet apt-get clean
 fi
 
 # Service verification
 SERVICES_TO_CHECK=(ssh chrony postfix auditd fail2ban ufw apparmor systemd-networkd)
 for svc in "${SERVICES_TO_CHECK[@]}"; do
-    if systemctl list-unit-files "${svc}.service" >/dev/null 2>&1; then
+    if run_quiet systemctl list-unit-files "${svc}.service"; then
         if systemctl is-active --quiet "$svc"; then
             log_info "service active: $svc"
         else

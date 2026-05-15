@@ -55,12 +55,12 @@ elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
         log_info "User already exists: $ADMIN_USER"
     else
         log_info "Creating user: $ADMIN_USER"
-        useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+        run_quiet useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
     fi
 
     # Set password
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        run_quiet bash -c "echo '${ADMIN_USER}:${ADMIN_PASSWORD}' | chpasswd"
         log_info "Password set for $ADMIN_USER"
     fi
 
@@ -68,7 +68,7 @@ elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
     if id -nG "$ADMIN_USER" | tr ' ' '\n' | grep -qx sudo; then
         log_info "User $ADMIN_USER is in sudo group"
     else
-        usermod -aG sudo "$ADMIN_USER"
+        run_quiet usermod -aG sudo "$ADMIN_USER"
         log_info "Added $ADMIN_USER to sudo group"
     fi
 else
@@ -79,7 +79,7 @@ else
     fi
 
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        run_quiet bash -c "echo '${ADMIN_USER}:${ADMIN_PASSWORD}' | chpasswd"
         log_info "Password changed for $ADMIN_USER"
     fi
 fi
