@@ -27,15 +27,6 @@ EOF
     pkg_install postfix mailutils bsd-mailx
 fi
 
-# Fix postfix chroot jail resolv.conf ownership (postfix may have wrong perms)
-if plan_action "fix postfix chroot jail /etc/resolv.conf ownership"; then
-    if [ -f /var/spool/postfix/etc/resolv.conf ]; then
-        chown root:root /var/spool/postfix/etc/resolv.conf
-        chmod 0644 /var/spool/postfix/etc/resolv.conf
-        log_info "Fixed ownership of /var/spool/postfix/etc/resolv.conf"
-    fi
-fi
-
 # 1. Postfix main.cf from template
 template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
 if plan_action "render $template -> $TOOLKIT_POSTFIX_MAIN_CF"; then
@@ -48,6 +39,14 @@ if plan_action "render $template -> $TOOLKIT_POSTFIX_MAIN_CF"; then
         run_quiet systemctl restart postfix || log_warn "postfix restart failed"
     fi
     system_service_enable_start postfix || true
+
+    # Fix postfix chroot jail resolv.conf ownership (must run after postfix starts)
+    # postfix creates this file when started, so we fix permissions after startup
+    if [ -f /var/spool/postfix/etc/resolv.conf ]; then
+        chown root:root /var/spool/postfix/etc/resolv.conf 2>/dev/null || true
+        chmod 0644 /var/spool/postfix/etc/resolv.conf 2>/dev/null || true
+        log_info "Fixed ownership of /var/spool/postfix/etc/resolv.conf"
+    fi
 fi
 
 # 2. Environment file shared by report/alert scripts
