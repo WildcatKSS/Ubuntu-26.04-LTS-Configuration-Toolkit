@@ -36,7 +36,7 @@
 # when config file doesn't exist yet.
 config_create_defaults() {
     export ADMIN_MODE_CREATE_USER="yes"
-    export TOOLKIT_LOG_LEVEL="info"
+    export TOOLKIT_LOG_LEVEL="debug"
     export NETWORK_INTERFACE="ens3"
     export USE_DHCP="false"
     export IP_ADDRESS="192.168.1.10"
@@ -112,6 +112,19 @@ questionnaire_run() {
     echo
     echo "Dit script configureert een verse Ubuntu Server 26.04 LTS installatie end-to-end."
     echo "Beantwoord de vragen per sectie. Druk op Enter om de standaardwaarde te accepteren."
+    echo
+
+    # -------------------------------------------------------------------------
+    # Section 0: Debug Level (first, so all logging is configured from the start)
+    # -------------------------------------------------------------------------
+    log_info "Sectie 0: Debug niveau"
+    echo
+    echo "Het log-niveau regelt hoeveel detail de toolkit naar het logbestand schrijft."
+    echo
+
+    TOOLKIT_LOG_LEVEL=$(questionnaire_prompt_string "Log niveau (debug|info|warn|error)" "debug")
+    export TOOLKIT_LOG_LEVEL
+
     echo
 
     # -------------------------------------------------------------------------
@@ -203,11 +216,7 @@ questionnaire_run() {
     echo "Basisidentiteit van de server: hostnaam, tijdzone en taal."
     echo "De hostnaam wordt gebruikt in e-mailmeldingen en logregels."
     echo "De tijdzone bepaalt de lokale tijd voor cron-jobs en logbestanden."
-    echo "Het log-niveau regelt hoeveel detail de toolkit naar het logbestand schrijft."
     echo
-
-    TOOLKIT_LOG_LEVEL=$(questionnaire_prompt_string "Log niveau (debug|info|warn|error)" "info")
-    export TOOLKIT_LOG_LEVEL
 
     HOSTNAME=$(questionnaire_prompt_string "Hostnaam van de server" "server.local.lan")
     export HOSTNAME
