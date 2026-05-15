@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Module Selection Menu Display Bug**
+  - Fixed main menu not displaying correctly during interactive setup
+  - `questionnaire_ask_modules()` was sending menu UI messages to stdout
+  - These messages were captured by the module selection read loop, breaking the interactive menu
+  - All informational output now correctly redirected to stderr
+  - Module selection menu now displays properly and accepts user input correctly
+
 - **Dependency Parser Bug**
   - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
   - Parser now correctly recognizes empty `DEPENDS:` field for modules with no dependencies
