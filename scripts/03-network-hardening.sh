@@ -76,7 +76,7 @@ if plan_action "configure UFW rules for active services"; then
     done
 fi
 
-# 5. Disable IPv6 (sysctl + grub)
+# 5. Disable IPv6 (sysctl + grub + netplan)
 if plan_action "persistently disable IPv6"; then
     cat >/etc/sysctl.d/99-ipv6.conf <<'EOF'
 net.ipv6.conf.all.disable_ipv6 = 1
@@ -85,6 +85,19 @@ net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
     run_quiet sysctl -p /etc/sysctl.d/99-ipv6.conf
     log_info "IPv6 disabled via sysctl"
+
+    # Disable IPv6 in netplan for systemd-networkd
+    if [ -d /etc/netplan ]; then
+        for nf in /etc/netplan/*.yaml /etc/netplan/*.yml; do
+            if [ -f "$nf" ]; then
+                if ! grep -q 'ipv6-privacy:' "$nf"; then
+                    sed -i '/^[[:space:]]*dhcp/a\            ipv6: false' "$nf" 2>/dev/null || true
+                    log_info "Disabled IPv6 in netplan: $nf"
+                fi
+            fi
+        done
+        run_quiet netplan apply || log_warn "netplan apply failed (non-fatal)"
+    fi
 
     if [ -f /etc/default/grub ]; then
         if grep -q 'ipv6.disable=1' /etc/default/grub; then
