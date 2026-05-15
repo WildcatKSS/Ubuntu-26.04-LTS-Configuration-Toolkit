@@ -8,7 +8,7 @@
 # DEPENDS:
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
-# ADDED:       1.1.8
+# ADDED:       1.2.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -19,6 +19,13 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 # including failed authentication attempts, API tokens, and SSL/TLS key material.
 # The report file is restricted to root and syslog group (chmod 0640).
 # Keep the error-report.json file secure and do not transmit over untrusted networks.
+#
+# FUTURE IMPROVEMENTS:
+# - Extract real timestamps from log entries (currently uses report generation time)
+# - Populate by_source summary with source:count mapping
+# - Add optional log rotation/cleanup (keep only last N reports)
+# - Implement suggested_fixes extraction from YAML patterns
+# - Add user-configurable scan window (currently hardcoded 7 days)
 
 OUTPUT_DIR="${TOOLKIT_PERSISTENT_DIR:-.}"
 OUTPUT_FILE="$OUTPUT_DIR/error-report.json"
@@ -203,6 +210,7 @@ logparser_deduplicate_and_parse() {
 	local -A entry_map
 	local -A severity_counts
 	local -A source_counts
+	local -A pattern_matches
 	local total_entries=0
 	local total_occurrences=0
 	local patterns_matched=0
@@ -240,6 +248,14 @@ logparser_deduplicate_and_parse() {
 		if [ -z "${entry_map[$msg_key]:-}" ]; then
 			entry_map["$msg_key"]=1
 			total_entries=$((total_entries + 1))
+
+			while IFS= read -r pattern_id; do
+				if [ -n "$pattern_id" ] && logparser_match_pattern "$message" "$pattern_id" >/dev/null 2>&1; then
+					pattern_matches["$pattern_id"]=$((${pattern_matches["$pattern_id"]:-0} + 1))
+					patterns_matched=$((patterns_matched + 1))
+					break
+				fi
+			done < <(logparser_load_patterns)
 		else
 			entry_map["$msg_key"]=$((entry_map["$msg_key"] + 1))
 		fi
@@ -264,6 +280,14 @@ logparser_deduplicate_and_parse() {
 		done
 	} >> "$metadata_file"
 
+	echo "$patterns_matched" >> "$metadata_file"
+
+	{
+		for pid in "${!pattern_matches[@]}"; do
+			echo "$pid"
+		done
+	} >> "$metadata_file"
+
 	{
 		local first=true
 		for key in "${!entry_map[@]}"; do
@@ -276,15 +300,18 @@ logparser_deduplicate_and_parse() {
 				echo ","
 			fi
 
-			local msg_escaped pattern
+			local msg_escaped pattern matched_pattern
 			msg_escaped=$(logparser_escape_json_string "$message")
 			local src_escaped
 			src_escaped=$(logparser_escape_json_string "$source")
 
-			pattern="null"
-			if logparser_match_pattern "$message" "apt-lock" >/dev/null 2>&1; then
-				pattern="apt-lock"
-			fi
+			matched_pattern="null"
+			while IFS= read -r pattern_id; do
+				if [ -n "$pattern_id" ] && logparser_match_pattern "$message" "$pattern_id" >/dev/null 2>&1; then
+					matched_pattern="\"$pattern_id\""
+					break
+				fi
+			done < <(logparser_load_patterns)
 
 			echo -n "    {"
 			echo -n "\"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
@@ -292,7 +319,7 @@ logparser_deduplicate_and_parse() {
 			echo -n ", \"severity\": \"$severity\""
 			echo -n ", \"message\": \"$msg_escaped\""
 			echo -n ", \"occurrence_count\": $count"
-			echo -n ", \"matched_pattern\": $pattern"
+			echo -n ", \"matched_pattern\": $matched_pattern"
 			echo -n ", \"suggested_fixes\": []"
 			echo -n "}"
 		done
@@ -317,7 +344,10 @@ logparser_write_json_report() {
 		echo "0" >> "$metadata_file"
 	}
 
-	local total_unique total_occurrences crit_count err_count warn_count info_count
+	local total_unique total_occurrences crit_count err_count warn_count info_count patterns_matched
+	local -a source_list=()
+	local -a pattern_list=()
+
 	{
 		read total_unique
 		read total_occurrences
@@ -325,6 +355,10 @@ logparser_write_json_report() {
 		read err_count
 		read warn_count
 		read info_count
+		read patterns_matched
+		while read -r pattern_id; do
+			[ -n "$pattern_id" ] && pattern_list+=("$pattern_id")
+		done
 	} < "$metadata_file"
 
 	total_unique=${total_unique:-0}
@@ -333,6 +367,7 @@ logparser_write_json_report() {
 	err_count=${err_count:-0}
 	warn_count=${warn_count:-0}
 	info_count=${info_count:-0}
+	patterns_matched=${patterns_matched:-0}
 
 	local start_time
 	start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -355,8 +390,21 @@ logparser_write_json_report() {
 		echo "      \"INFO\": $info_count"
 		echo "    },"
 		echo "    \"by_source\": {},"
-		echo "    \"patterns_matched\": 0,"
-		echo "    \"patterns_list\": []"
+		echo "    \"patterns_matched\": $patterns_matched,"
+		echo "    \"patterns_list\": ["
+		{
+			local first=true
+			for pid in "${pattern_list[@]}"; do
+				if [ "$first" = true ]; then
+					first=false
+				else
+					echo ","
+				fi
+				echo -n "      \"$pid\""
+			done
+		}
+		echo ""
+		echo "    ]"
 		echo "  },"
 		echo "  \"entries\": ["
 
