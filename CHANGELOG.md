@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Applied to package management functions (`pkg_install`, `pkg_purge`, `pkg_update`)
 
 ### Changed
+- **Static IP Address Default Updated**
+  - `IP_ADDRESS` default changed from `192.168.1.10` to `192.168.1.100`
+  - Better default allocation pattern for typical gateway (192.168.1.1) scenarios
+  - Applied to interactive setup and configuration defaults
+
 - **DHCP Now Default Network Configuration**
   - `USE_DHCP` default changed from `false` to `true`
   - Interactive setup now defaults to DHCP for network configuration
