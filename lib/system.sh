@@ -96,3 +96,20 @@ system_file_install() {
     install -m "$mode" "$src" "$dst"
     log_info "Installed: $dst (mode $mode)"
 }
+
+# system_get_active_services [service_list...]
+# Scans for active services and returns space-separated list of running ones.
+# Usage: active=$(system_get_active_services ssh postfix dovecot)
+# Example result: "ssh postfix"  (dovecot not running)
+system_get_active_services() {
+    local services=("$@")
+    local active_list=()
+
+    for svc in "${services[@]}"; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            active_list+=("$svc")
+        fi
+    done
+
+    echo "${active_list[@]}"
+}

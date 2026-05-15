@@ -65,13 +65,14 @@ if plan_action "configure UFW rules for active services"; then
         [dovecot]="143/tcp:IMAP"
     )
 
-    for service in "${!SERVICE_RULES[@]}"; do
-        if run_quiet systemctl is-active --quiet "$service"; then
-            IFS=':' read -r port comment <<< "${SERVICE_RULES[$service]}"
-            if ! run_quiet ufw status | grep -q "$port"; then
-                run_quiet ufw allow "$port" comment "$comment"
-                log_info "UFW: allowed $port ($comment) — service $service is running"
-            fi
+    # Get list of active services (scanned once)
+    active_services=($(system_get_active_services "${!SERVICE_RULES[@]}"))
+
+    for service in "${active_services[@]}"; do
+        IFS=':' read -r port comment <<< "${SERVICE_RULES[$service]}"
+        if ! run_quiet ufw status | grep -q "$port"; then
+            run_quiet ufw allow "$port" comment "$comment"
+            log_info "UFW: allowed $port ($comment) — service $service is running"
         fi
     done
 fi
@@ -119,23 +120,31 @@ if plan_action "install fail2ban and configure jails for active services"; then
     template="$TOOLKIT_ROOT/templates/fail2ban-jail.local"
     target="/etc/fail2ban/jail.local"
     if system_file_install "$template" "$target" 0644; then
-        # Scan for running services and disable irrelevant jails
+        # Map services to their fail2ban jails
         declare -A SERVICE_JAILS=(
             [ssh]="sshd"
             [postfix]="postfix-sasl postfix-ratelimit"
             [dovecot]="dovecot"
         )
 
+        # Scan for active services once (reuse UFW scan)
+        active_services=($(system_get_active_services "${!SERVICE_JAILS[@]}"))
+
+        # Disable jails for inactive services
         for service in "${!SERVICE_JAILS[@]}"; do
-            jails="${SERVICE_JAILS[$service]}"
-            if run_quiet systemctl is-active --quiet "$service"; then
-                log_info "Fail2ban: $service is running — enabling jails: $jails"
-            else
+            if [[ ! " ${active_services[@]} " =~ " ${service} " ]]; then
+                jails="${SERVICE_JAILS[$service]}"
                 for jail in $jails; do
                     sed -i "/^\[$jail\]/,/^$/s/^enabled = true/enabled = false/" "$target"
                     log_info "Fail2ban: $service not running — disabled jail: $jail"
                 done
             fi
+        done
+
+        # Log enabled jails
+        for service in "${active_services[@]}"; do
+            jails="${SERVICE_JAILS[$service]}"
+            log_info "Fail2ban: $service is running — enabling jails: $jails"
         done
 
         systemctl restart fail2ban || log_warn "fail2ban restart failed"
