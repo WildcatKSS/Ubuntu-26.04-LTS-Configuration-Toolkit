@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Maintains backward compatibility with fallback to `ens3`
   - Fixes UX issue where non-standard interface names were ignored
 
+- **Postfix Chroot Jail resolv.conf Ownership**: Fixed postfix warnings about incorrect file permissions
+  - Added explicit ownership fix for `/var/spool/postfix/etc/resolv.conf`
+  - Ensures file is owned by root:root with proper permissions (0644)
+  - Eliminates postfix log warnings: "warning: not owned by root"
+  - Runs after postfix installation to fix any permission issues from package setup
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
