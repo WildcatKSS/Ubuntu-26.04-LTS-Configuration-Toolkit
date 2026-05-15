@@ -268,8 +268,7 @@ questionnaire_run() {
     SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay port" "587")
     export SMTP_RELAY_PORT
 
-    DISK_ALERT_THRESHOLD=$(questionnaire_prompt_string "Disk usage threshold for alert (%)" "85")
-    export DISK_ALERT_THRESHOLD
+    export DISK_ALERT_THRESHOLD="85"
 
     echo
     echo "After Postfix installation, a test mail can be sent to"
