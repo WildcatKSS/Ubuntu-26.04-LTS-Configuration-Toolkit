@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.1.8 – 2026-05-15
 
+### Added
+- **Silent Command Execution Helper**
+  - New `run_quiet()` function in `lib/log.sh` for executing commands without terminal output
+  - Suppresses stdout/stderr of system commands (apt-get, systemctl, etc.) to keep terminal clean
+  - Only toolkit logs (green text) shown on terminal; system command output (white text) hidden
+  - All output still captured in logfile for debugging and troubleshooting
+  - Applied to package management functions (`pkg_install`, `pkg_purge`, `pkg_update`)
+
 ### Changed
 - **Debug Level Now Default for All Operations**
   - Removed debug level question from interactive setup (no longer user-configurable)
