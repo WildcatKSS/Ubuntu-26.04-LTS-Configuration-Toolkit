@@ -5,7 +5,7 @@
 #
 # MODULE:      07-monitoring
 # SUMMARY:     Sysstat collection, rsyslog rules, logrotate policies
-# DEPENDS:     06-hardening
+# DEPENDS:     05-packages
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0
@@ -41,7 +41,7 @@ else
     template="$TOOLKIT_ROOT/templates/rsyslog-custom.conf"
     target="/etc/rsyslog.d/99-custom.conf"
     if system_file_install "$template" "$target" 0644; then
-        systemctl restart rsyslog 2>/dev/null || log_warn "rsyslog restart failed"
+        run_quiet systemctl restart rsyslog || log_warn "rsyslog restart failed"
     fi
 fi
 

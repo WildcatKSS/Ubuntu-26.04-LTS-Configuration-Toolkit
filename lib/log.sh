@@ -8,9 +8,9 @@
 #   log_debug / log_info / log_warn / log_error
 #   log_check_diskspace
 #
-# Log level filtering via TOOLKIT_LOG_LEVEL (default: info):
-#   debug  — show DEBUG, INFO, WARN, ERROR
-#   info   — show INFO, WARN, ERROR  (default)
+# Log level filtering via TOOLKIT_LOG_LEVEL (default: debug):
+#   debug  — show DEBUG, INFO, WARN, ERROR  (default)
+#   info   — show INFO, WARN, ERROR
 #   warn   — show WARN, ERROR
 #   error  — show ERROR only
 
@@ -31,8 +31,8 @@ fi
 
 # Active log file path (set by main.sh; defaults to stderr only)
 : "${TOOLKIT_LOG_FILE:=}"
-# Minimum log level: debug | info | warn | error  (default: info)
-: "${TOOLKIT_LOG_LEVEL:=info}"
+# Minimum log level: debug | info | warn | error  (default: debug)
+: "${TOOLKIT_LOG_LEVEL:=debug}"
 
 # Returns 0 when <level> should be emitted given TOOLKIT_LOG_LEVEL.
 _log_level_enabled() {
@@ -99,4 +99,14 @@ log_check_diskspace() {
         return 1
     fi
     return 0
+}
+
+# run_quiet <command> [args...]
+# Execute a command silently (suppress stdout/stderr to /dev/null)
+# Exit code is preserved; critical for error handling with set -e
+run_quiet() {
+    local exit_code
+    "$@" >/dev/null 2>&1
+    exit_code=$?
+    return "$exit_code"
 }

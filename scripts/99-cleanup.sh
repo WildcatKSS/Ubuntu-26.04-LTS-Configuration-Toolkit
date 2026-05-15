@@ -21,14 +21,15 @@ if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would run apt autoremove + clean and verify service status"
 else
     log_info "Running apt autoremove + clean"
-    apt-get autoremove -y
-    apt-get clean
+    run_quiet apt-get autoremove -y
+    run_quiet apt-get clean
+    log_info "Cleanup complete"
 fi
 
 # Service verification
 SERVICES_TO_CHECK=(ssh chrony postfix auditd fail2ban ufw apparmor systemd-networkd)
 for svc in "${SERVICES_TO_CHECK[@]}"; do
-    if systemctl list-unit-files "${svc}.service" >/dev/null 2>&1; then
+    if systemctl show -p LoadState --value "$svc" 2>/dev/null | grep -q "^loaded"; then
         if systemctl is-active --quiet "$svc"; then
             log_info "service active: $svc"
         else
@@ -40,14 +41,3 @@ done
 if [ -f /var/run/reboot-required ]; then
     log_warn "REBOOT REQUIRED to finalise kernel/system upgrades"
 fi
-
-echo
-echo "=================================================="
-echo "  Ubuntu Server 26.04 toolkit setup complete"
-echo "=================================================="
-echo "  State file: $(state_active_path)"
-echo "  Log file:   ${TOOLKIT_LOG_FILE:-/var/log/toolkit-setup/toolkit-setup.log}"
-echo
-echo "Completed modules:"
-state_summary
-echo

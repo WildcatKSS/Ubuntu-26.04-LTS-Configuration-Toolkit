@@ -20,10 +20,10 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # 1. Hostname
 if plan_action "set hostname to $HOSTNAME"; then
-    if [ "$(hostname)" = "$HOSTNAME" ]; then
+    if [ "$(run_quiet hostname)" = "$HOSTNAME" ]; then
         log_info "Hostname already set: $HOSTNAME"
     else
-        hostnamectl set-hostname "$HOSTNAME"
+        run_quiet hostnamectl set-hostname "$HOSTNAME"
         log_info "Hostname set: $HOSTNAME"
     fi
 
@@ -88,22 +88,22 @@ if plan_action "render $template -> $target and run netplan apply"; then
         log_info "Wrote $target"
 
         # 5. Apply with auto-restore on connectivity failure
-        if ! netplan apply 2>&1; then
+        if ! run_quiet netplan apply; then
             log_error "netplan apply failed — restoring backup"
             rm -f "$target"
             cp -a /etc/netplan.backup/. /etc/netplan/
-            netplan apply || true
+            run_quiet netplan apply || true
             exit 1
         fi
         sleep 3
 
         target_ip="$GATEWAY"
         [ "${USE_DHCP:-true}" = "true" ] && target_ip="8.8.8.8"
-        if ! timeout 30 bash -c "until ping -c1 -W1 $target_ip >/dev/null 2>&1; do sleep 1; done"; then
+        if ! timeout 30 bash -c "until ping -c1 -W1 '$target_ip' >/dev/null 2>&1; do sleep 1; done"; then
             log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
             rm -f "$target"
             cp -a /etc/netplan.backup/. /etc/netplan/
-            netplan apply || true
+            run_quiet netplan apply || true
             exit 1
         fi
         log_info "Connectivity verified ($target_ip reachable)"
@@ -112,10 +112,10 @@ fi
 
 # 6. Verification (informational)
 log_info "Active interface state:"
-ip -brief addr show "$NETWORK_INTERFACE" | sed 's/^/  /'
+run_quiet ip -brief addr show "$NETWORK_INTERFACE" | sed 's/^/  /' || true
 log_info "Routing table:"
-ip -4 route | sed 's/^/  /'
+run_quiet ip -4 route | sed 's/^/  /' || true
 log_info "Listening sockets:"
-ss -tlnp 2>/dev/null | head -n 20 | sed 's/^/  /' || true
+run_quiet ss -tlnp | head -n 20 | sed 's/^/  /' || true
 
 log_info "IP configuration complete"

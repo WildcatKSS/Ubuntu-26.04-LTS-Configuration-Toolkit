@@ -7,7 +7,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
-## [Unreleased]
+## 1.1.8 – 2026-05-15
+
+### Fixed
+- **SECURITY: Command Injection in Password Setup**
+  - Fixed shell injection vulnerability in admin user password handling
+  - Removed unsafe bash -c wrapper that allowed variable expansion attacks
+  - Changed to safe stdin piping: `echo $user:$pass | chpasswd`
+  - Prevents malicious shells characters in passwords from executing
+  - **Impact:** Critical security fix - prevents privilege escalation
+
+- **SECURITY: Unquoted Variable in Network Connectivity Check**
+  - Added proper quoting around $target_ip variable in bash -c
+  - Prevents word-splitting and command injection in ping command
+  - Example: IP with spaces/pipes would expand without quotes
+  - **Impact:** Critical security fix - prevents arbitrary command execution
+
+- **SECURITY: Exit Code Handling in run_quiet()**
+  - Explicitly preserve and return exit codes from suppressed commands
+  - Critical for proper error handling with 'set -e'
+  - Prevents silent failures that could mask serious errors
+  - **Impact:** Essential for robustness - commands no longer silently fail
+
+- **Version Check Bot Intelligence**
+  - Fixed CI bot to intelligently handle CHANGELOG updates
+  - When VERSION is updated: Checks for new version section (no [Unreleased] needed)
+  - When VERSION is unchanged: Recommends [Unreleased] section
+  - Eliminates false positive bot recommendations on version-bumped PRs
+
+- **Auto-Detect Network Interface**
+  - Network interface name now auto-detected and shown as default
+  - Automatically finds first active interface (excluding loopback)
+  - Falls back to common names (eth0, enp0s3, ens3) if detection fails
+  - Much better UX: users see their actual interface instead of generic "ens3"
+  - Works seamlessly across different environments (VMs, bare metal, cloud)
+
+- **Service Verification Check in Cleanup Module**
+  - Fixed systemctl service unit verification that was unreliable
+  - `systemctl list-unit-files` doesn't reliably indicate unit existence
+  - Changed to use `systemctl show` with LoadState check instead
+  - Ensures accurate detection of available services
+
+- **Cleanup Feedback Missing**
+  - Added info-level log message after apt autoremove/clean completion
+  - Provides clear feedback that cleanup operation succeeded
+  - Improves user visibility into module progress
+
+- **Duplicate Completion Summary**
+  - Removed duplicate module list from 99-cleanup module output
+  - Final summary is now only shown once by main.sh at the end
+  - Eliminates redundant output and cleaner final display
+
+- **Enhanced Module Execution Summary**
+  - Added column headers (Module, Completed At, Duration)
+  - Execution time calculated for each module
+  - Total execution time displayed at end
+  - Better formatting for at-a-glance performance metrics
+
+### Changed
+- **Consistent Boolean Question Format**
+  - All yes/no questions now use (true/false) format
+  - Standardized format across USE_DHCP, AUTO_SECURITY_UPDATES, and SEND_TEST_MAIL
+  - Simpler validation and more consistent user experience
+  - Matches environment variable values
+
+- **Disk Usage Alert Threshold Simplified**
+  - Removed interactive question for disk usage threshold
+  - Now uses fixed default value of 85%
+  - Reduces setup configuration steps
+  - Can still be customized by editing config file if needed
+
+- **Project Language Changed to English**
+  - All interactive prompts and user-facing messages translated from Dutch to English
+  - Interactive setup questionnaire now fully in English
+  - Module selection menu and feedback messages in English
+  - Configuration creation messages in English
+  - Default system locale changed from `nl_NL.UTF-8` to `en_US.UTF-8`
+  - Better support for international users and global deployments
+
+### Added
+- **Silent Command Execution Helper**
+  - New `run_quiet()` function in `lib/log.sh` for executing commands without terminal output
+  - Suppresses stdout/stderr of system commands (apt-get, systemctl, etc.) to keep terminal clean
+  - Only toolkit logs (green text) shown on terminal; system command output (white text) hidden
+  - All output still captured in logfile for debugging and troubleshooting
+  - Applied to package management functions (`pkg_install`, `pkg_purge`, `pkg_update`)
+  - Applied to ALL system commands across all scripts for consistent clean output
+
+- **Complete Output Suppression**
+  - All system commands wrapped with `run_quiet()`:
+    - User management (useradd, chpasswd, usermod)
+    - Network configuration (hostname, netplan, ip, ss, ufw)
+    - System settings (timedatectl, locale, chronyc, sysctl)
+    - Service management (systemctl)
+    - Firewall and kernel (grub, augenrules)
+    - Package cleanup (apt-get autoremove, apt-get clean)
+  - Clean terminal with ONLY green toolkit logs
+  - Exit codes and command logic fully preserved
+  - Full output still available in logfile for troubleshooting
+
+### Changed
+- **Static IP Address Default Updated**
+  - `IP_ADDRESS` default changed from `192.168.1.10` to `192.168.1.100`
+  - Better default allocation pattern for typical gateway (192.168.1.1) scenarios
+  - Applied to interactive setup and configuration defaults
+
+- **DHCP Now Default Network Configuration**
+  - `USE_DHCP` default changed from `false` to `true`
+  - Interactive setup now defaults to DHCP for network configuration
+  - More suitable for cloud and automated deployment environments
+  - Static IP still available as an option during setup
+
+- **Debug Level Now Default for All Operations**
+  - Removed debug level question from interactive setup (no longer user-configurable)
+  - `TOOLKIT_LOG_LEVEL` default changed from `info` to `debug` globally
+  - All scripts and processes run in debug mode by default
+  - Ensures comprehensive logging and debugging information is always available
+  - Simplifies setup flow by removing configuration question
+
+### Fixed
+- **Admin User Question Always Asked**
+  - Removed conditional skip that prevented admin user question from being asked on subsequent runs
+  - Admin configuration question now always appears, allowing users to reconfigure settings
+  - Previously, selecting "skip" in the first run would cache the setting, preventing the question from appearing in future runs
+  
+- **Module Dependency DAG Optimization**
+  - Fixed overly restrictive linear dependency chain where each module depended on the previous one
+  - Corrected dependencies to only enforce actual requirements:
+    - `04-system-settings` now depends on `01-base-config` (was `03-network-hardening`)
+      Timezone, locale, and NTP configuration don't require network hardening
+    - `05-packages` now depends on `01-base-config` (was `04-system-settings`)
+      Package installation only requires system update, not timezone/locale setup
+    - `07-monitoring` now depends on `05-packages` (was `06-hardening`)
+      Monitoring tools only need packages installed, not kernel hardening
+  - Enables parallel execution of independent modules, improving toolkit efficiency
+  - Maintains correct ordering constraints while removing unnecessary serialization
 
 ## 1.1.7 – 2026-05-15
 
@@ -23,10 +157,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Module Selection Menu Layout**
-  - Removed blank line after "Huidige selectie:" header
+  - Removed blank line after "Current selection:" header
   - Removed empty description line (MODULE_DESC field currently unused)
   - Combined module name and dependencies on a single aligned line
-  - Format: `N) [x] module-name             (vereist: dependency)`
+  - Format: `N) [x] module-name             (requires: dependency)`
   - Cleaner, more compact display
 
 ### Fixed

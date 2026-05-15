@@ -44,7 +44,7 @@ if plan_action "render $template -> $target"; then
         [ -f "$target" ] && [ ! -f "${target}.toolkit.bak" ] && cp "$target" "${target}.toolkit.bak"
         install -m 0644 "$tmp" "$target"
         rm -f "$tmp"
-        systemctl restart postfix || log_warn "postfix restart failed"
+        run_quiet systemctl restart postfix || log_warn "postfix restart failed"
     fi
     system_service_enable_start postfix || true
 fi

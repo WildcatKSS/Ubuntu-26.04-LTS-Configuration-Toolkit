@@ -5,7 +5,7 @@
 #
 # MODULE:      05-packages
 # SUMMARY:     Install standard package set
-# DEPENDS:     04-system-settings
+# DEPENDS:     01-base-config
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0

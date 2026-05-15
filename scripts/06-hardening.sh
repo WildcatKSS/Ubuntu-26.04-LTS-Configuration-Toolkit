@@ -25,7 +25,7 @@ if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would install $template -> $target and run sysctl --system"
 else
     if system_file_install "$template" "$target" 0644; then
-        sysctl --system >/dev/null
+        run_quiet sysctl --system
         log_info "Applied kernel hardening sysctls"
     fi
 fi
@@ -35,9 +35,9 @@ if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would verify AppArmor is enabled and report profile counts"
 else
     pkg_install apparmor apparmor-utils
-    if aa-status --enabled >/dev/null 2>&1; then
-        enforced="$(aa-status 2>/dev/null | awk '/profiles are in enforce mode/{print $1; exit}')"
-        complain="$(aa-status 2>/dev/null | awk '/profiles are in complain mode/{print $1; exit}')"
+    if run_quiet aa-status --enabled; then
+        enforced="$(run_quiet aa-status | awk '/profiles are in enforce mode/{print $1; exit}')"
+        complain="$(run_quiet aa-status | awk '/profiles are in complain mode/{print $1; exit}')"
         log_info "AppArmor enabled: ${enforced:-?} enforce, ${complain:-?} complain"
     else
         log_error "AppArmor is not enabled — Ubuntu Server 26.04 should ship with it active"
@@ -55,7 +55,7 @@ else
     rules_target="/etc/audit/rules.d/99-toolkit.rules"
     if system_file_install "$rules_template" "$rules_target" 0640; then
         if command -v augenrules >/dev/null 2>&1; then
-            augenrules --load >/dev/null 2>&1 || log_warn "augenrules --load failed (rules may be -e 2 from earlier load)"
+            run_quiet augenrules --load || log_warn "augenrules --load failed (rules may be -e 2 from earlier load)"
         fi
     fi
     system_service_enable_start auditd || true

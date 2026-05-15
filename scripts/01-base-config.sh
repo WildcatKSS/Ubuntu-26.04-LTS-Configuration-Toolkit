@@ -22,9 +22,9 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 if plan_action "apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y"; then
     pkg_update
     log_info "Running apt-get upgrade"
-    apt-get upgrade -y
+    run_quiet apt-get upgrade -y
     log_info "Running apt-get dist-upgrade"
-    apt-get dist-upgrade -y
+    run_quiet apt-get dist-upgrade -y
 fi
 
 # 2. Admin credentials (from questionnaire or environment)
@@ -55,12 +55,12 @@ elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
         log_info "User already exists: $ADMIN_USER"
     else
         log_info "Creating user: $ADMIN_USER"
-        useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+        run_quiet useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
     fi
 
     # Set password
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
         log_info "Password set for $ADMIN_USER"
     fi
 
@@ -68,7 +68,7 @@ elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
     if id -nG "$ADMIN_USER" | tr ' ' '\n' | grep -qx sudo; then
         log_info "User $ADMIN_USER is in sudo group"
     else
-        usermod -aG sudo "$ADMIN_USER"
+        run_quiet usermod -aG sudo "$ADMIN_USER"
         log_info "Added $ADMIN_USER to sudo group"
     fi
 else
@@ -79,7 +79,7 @@ else
     fi
 
     if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | chpasswd
+        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
         log_info "Password changed for $ADMIN_USER"
     fi
 fi
