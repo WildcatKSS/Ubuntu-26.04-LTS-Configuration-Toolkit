@@ -5,7 +5,7 @@
 #
 # MODULE:      00-preflight
 # SUMMARY:     Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks
-# DEPENDS:     none
+# DEPENDS:
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
 # ADDED:       1.0.0
