@@ -31,13 +31,35 @@
 #   AUTO_SECURITY_UPDATES       "true" or "false" for unattended upgrades
 #   SEND_TEST_MAIL              "yes" to send a test mail after postfix setup
 
+# detect_network_interface
+# Auto-detect the first active network interface (excluding lo)
+detect_network_interface() {
+    local iface
+    # Try to get first non-loopback interface from ip link
+    iface=$(ip link show 2>/dev/null | grep -E "^[0-9]+:" | grep -v "lo:" | head -1 | sed 's/^[0-9]*: \([^:]*\).*/\1/')
+
+    # Fallback to common names if detection fails
+    if [ -z "$iface" ]; then
+        if [ -d /sys/class/net/ens3 ]; then
+            iface="ens3"
+        elif [ -d /sys/class/net/eth0 ]; then
+            iface="eth0"
+        elif [ -d /sys/class/net/enp0s3 ]; then
+            iface="enp0s3"
+        else
+            iface="ens3"  # Default fallback
+        fi
+    fi
+    echo "$iface"
+}
+
 # config_create_defaults
 # Set sensible default environment variables for plan/dry-run modes
 # when config file doesn't exist yet.
 config_create_defaults() {
     export ADMIN_MODE_CREATE_USER="yes"
     export TOOLKIT_LOG_LEVEL="debug"
-    export NETWORK_INTERFACE="ens3"
+    export NETWORK_INTERFACE="$(detect_network_interface)"
     export USE_DHCP="true"
     export IP_ADDRESS="192.168.1.100"
     export PREFIX_LENGTH="24"
@@ -223,7 +245,7 @@ questionnaire_run() {
     echo "The toolkit automatically backs up the existing Netplan configuration."
     echo
 
-    NETWORK_INTERFACE=$(questionnaire_prompt_string "Network interface name" "ens3")
+    NETWORK_INTERFACE=$(questionnaire_prompt_string "Network interface name" "${NETWORK_INTERFACE:-ens3}")
     export NETWORK_INTERFACE
 
     USE_DHCP=$(questionnaire_prompt_string "Use DHCP? (true/false)" "true")
