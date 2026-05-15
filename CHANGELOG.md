@@ -12,11 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Module Selection Menu Display Bug**
   - Fixed main menu not waiting for user input and closing immediately
-  - `questionnaire_ask_modules()` now properly handles terminal input detection
-  - Checks if stdin is connected to a terminal with `[ -t 0 ]`
-  - If stdin is not a terminal (e.g., with `sudo`), explicitly opens `/dev/tty` with `read <> /dev/tty`
-  - Gracefully handles cases where `/dev/tty` is not available
-  - Menu now displays properly and correctly waits for user input in all scenarios
+  - **Root cause:** `questionnaire_ask_modules()` was called via process substitution
+    `< <(questionnaire_ask_modules)` in `main.sh`. Bash redirects stdin to
+    `/dev/null` for the subshell in process substitution, causing `read`
+    inside the function to return immediately with empty input
+  - **Fix:** Refactored to populate the global `SELECTED_MODULES` array
+    directly inside `questionnaire_ask_modules()` instead of writing to stdout
+  - `main.sh` now calls `questionnaire_ask_modules` directly without
+    process substitution, allowing `read` to access the terminal normally
+  - Menu now displays properly and correctly waits for user input
 
 - **Dependency Parser Bug**
   - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
