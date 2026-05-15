@@ -379,7 +379,11 @@ questionnaire_ask_modules() {
         done
         echo >&2
         printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: ' >&2
-        read -r input < /dev/tty || input=""
+        if [ -t 0 ]; then
+            read -r input
+        else
+            read -r input <> /dev/tty 2>/dev/null || input=""
+        fi
         [ -z "$input" ] && break
 
         local to_toggle=()
