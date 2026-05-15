@@ -1,5 +1,6 @@
 # Fail2ban jail configuration — installed by script 03-network-hardening
 # /etc/fail2ban/jail.local
+# Jails are auto-enabled based on running services
 
 [DEFAULT]
 bantime  = 3600
@@ -10,8 +11,41 @@ backend  = systemd
 # Whitelist localhost (IPv4 only — IPv6 is disabled by toolkit)
 ignoreip = 127.0.0.1/8
 
+# Recidive: punish repeat offenders harder
+[recidive]
+enabled  = true
+filter   = recidive
+logpath  = /var/log/fail2ban.log
+bantime  = 604800
+findtime = 86400
+maxretry = 5
+
+# SSH brute force protection (auto-enabled if sshd running)
 [sshd]
 enabled = true
 port    = ssh
 logpath = %(sshd_log)s
 backend = %(sshd_backend)s
+
+# Postfix SMTP AUTH (auto-enabled if postfix running)
+[postfix-sasl]
+enabled = true
+port    = smtp,imap2,pop3,submission,imap3,smtps,ssmtp
+filter  = postfix[mode=auth]
+logpath = /var/log/mail.log
+
+# Postfix rate limiting (auto-enabled if postfix running)
+[postfix-ratelimit]
+enabled = true
+filter  = postfix[mode=ratelimit]
+logpath = /var/log/mail.log
+bantime = 1800
+maxretry = 20
+
+# Dovecot IMAP/POP3 (auto-enabled if dovecot running)
+[dovecot]
+enabled = true
+port    = imap,pop3,imap3,imaps,pop3s
+filter  = dovecot
+logpath = /var/log/mail.log
+maxretry = 5

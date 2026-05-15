@@ -113,12 +113,31 @@ EOF
     fi
 fi
 
-# 6. Fail2ban
-if plan_action "install fail2ban and copy jail.local"; then
+# 6. Fail2ban with service-aware jails
+if plan_action "install fail2ban and configure jails for active services"; then
     pkg_install fail2ban
     template="$TOOLKIT_ROOT/templates/fail2ban-jail.local"
     target="/etc/fail2ban/jail.local"
     if system_file_install "$template" "$target" 0644; then
+        # Scan for running services and disable irrelevant jails
+        declare -A SERVICE_JAILS=(
+            [ssh]="sshd"
+            [postfix]="postfix-sasl postfix-ratelimit"
+            [dovecot]="dovecot"
+        )
+
+        for service in "${!SERVICE_JAILS[@]}"; do
+            jails="${SERVICE_JAILS[$service]}"
+            if run_quiet systemctl is-active --quiet "$service"; then
+                log_info "Fail2ban: $service is running — enabling jails: $jails"
+            else
+                for jail in $jails; do
+                    sed -i "/^\[$jail\]/,/^$/s/^enabled = true/enabled = false/" "$target"
+                    log_info "Fail2ban: $service not running — disabled jail: $jail"
+                done
+            fi
+        done
+
         systemctl restart fail2ban || log_warn "fail2ban restart failed"
     fi
     system_service_enable_start fail2ban || true
