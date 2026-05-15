@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.1.8 – 2026-05-15
+
+### Fixed
+- **Module Dependency DAG Optimization**
+  - Fixed overly restrictive linear dependency chain where each module depended on the previous one
+  - Corrected dependencies to only enforce actual requirements:
+    - `04-system-settings` now depends on `01-base-config` (was `03-network-hardening`)
+      Timezone, locale, and NTP configuration don't require network hardening
+    - `05-packages` now depends on `01-base-config` (was `04-system-settings`)
+      Package installation only requires system update, not timezone/locale setup
+    - `07-monitoring` now depends on `05-packages` (was `06-hardening`)
+      Monitoring tools only need packages installed, not kernel hardening
+  - Enables parallel execution of independent modules, improving toolkit efficiency
+  - Maintains correct ordering constraints while removing unnecessary serialization
+
 ## 1.1.7 – 2026-05-15
 
 ### Added
