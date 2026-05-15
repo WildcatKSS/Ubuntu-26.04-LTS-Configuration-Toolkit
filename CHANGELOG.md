@@ -48,6 +48,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     crashing the script
   - Menu now displays properly and correctly waits for user input
 
+- **Metadata Field Parser Bug (CRITICAL)**
+  - Fixed metadata parsing to properly trim leading spaces from `DEPENDS`, `DESC`, `IDEMPOTENT`, and `DESTRUCTIVE` fields
+  - Previously `${field# }` only removed the first space, leaving multiple leading spaces intact
+  - This caused cascade deselect and dependency checking to fail because grep patterns wouldn't match
+  - Changed to `${field#"${field%%[^ ]*}"}` to remove all leading whitespace
+  - **Impact:** Cascade deselect and cascade auto-select features now work correctly
+  - Fixes dependency resolution in questionnaire menus
+
 - **Dependency Parser Bug**
   - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
   - Parser now correctly recognizes empty `DEPENDS:` field for modules with no dependencies
