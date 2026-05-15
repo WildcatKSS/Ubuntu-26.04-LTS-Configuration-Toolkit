@@ -462,6 +462,7 @@ main() {
     else
         config_load "$conf" || exit 1
         config_validate || exit 1
+        _questionnaire_done=1
     fi
 
     state_init
