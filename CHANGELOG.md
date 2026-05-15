@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
+- **SECURITY: Command Injection in Password Setup**
+  - Fixed shell injection vulnerability in admin user password handling
+  - Removed unsafe bash -c wrapper that allowed variable expansion attacks
+  - Changed to safe stdin piping: `echo $user:$pass | chpasswd`
+  - Prevents malicious shells characters in passwords from executing
+  - **Impact:** Critical security fix - prevents privilege escalation
+
+- **SECURITY: Unquoted Variable in Network Connectivity Check**
+  - Added proper quoting around $target_ip variable in bash -c
+  - Prevents word-splitting and command injection in ping command
+  - Example: IP with spaces/pipes would expand without quotes
+  - **Impact:** Critical security fix - prevents arbitrary command execution
+
+- **SECURITY: Exit Code Handling in run_quiet()**
+  - Explicitly preserve and return exit codes from suppressed commands
+  - Critical for proper error handling with 'set -e'
+  - Prevents silent failures that could mask serious errors
+  - **Impact:** Essential for robustness - commands no longer silently fail
+
 - **Version Check Bot Intelligence**
   - Fixed CI bot to intelligently handle CHANGELOG updates
   - When VERSION is updated: Checks for new version section (no [Unreleased] needed)
