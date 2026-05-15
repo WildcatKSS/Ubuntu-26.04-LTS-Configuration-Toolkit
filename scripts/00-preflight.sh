@@ -15,7 +15,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 errors=0
 plan_warnings=0
 
@@ -34,15 +33,10 @@ preflight_runtime_fail() {
 }
 
 # 1. OS verification
-if [ -f /etc/os-release ]; then
-    if ! grep -q 'VERSION_ID="26\.04"' /etc/os-release || ! grep -q '^ID=ubuntu' /etc/os-release; then
-        log_error "This system is not Ubuntu Server 26.04 LTS"
-        errors=$((errors + 1))
-    else
-        log_info "OS check ok: Ubuntu Server 26.04"
-    fi
+if system_verify_ubuntu_26; then
+    log_info "OS check ok: Ubuntu Server 26.04"
 else
-    log_error "/etc/os-release missing"
+    log_error "This system is not Ubuntu Server 26.04 LTS (or /etc/os-release missing)"
     errors=$((errors + 1))
 fi
 
