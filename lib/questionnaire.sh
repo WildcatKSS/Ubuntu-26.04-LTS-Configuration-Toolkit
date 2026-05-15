@@ -343,13 +343,13 @@ questionnaire_ask_modules() {
         return 0
     fi
 
-    echo
+    echo >&2
     log_info "=== Module Selection ==="
-    echo
-    echo "Kies welke modules je wilt inschakelen."
-    echo "Modules met dependencies worden automatisch ingeschakeld."
-    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5"
-    echo
+    echo >&2
+    echo "Kies welke modules je wilt inschakelen." >&2
+    echo "Modules met dependencies worden automatisch ingeschakeld." >&2
+    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5" >&2
+    echo >&2
 
     declare -g -A QUESTIONNAIRE_SELECTED=()
     declare -a module_list=()
@@ -363,21 +363,21 @@ questionnaire_ask_modules() {
     done
 
     while true; do
-        echo "Huidige selectie:"
-        echo
+        echo "Huidge selectie:" >&2
+        echo >&2
         index=0
         for short in "${module_list[@]}"; do
             local checkbox="[ ]"
             [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && checkbox="[x]"
-            printf '%d) %s %s\n' "$index" "$checkbox" "$short"
-            printf '   %s\n' "${MODULE_DESC[$short]:-}"
+            printf '%d) %s %s\n' "$index" "$checkbox" "$short" >&2
+            printf '   %s\n' "${MODULE_DESC[$short]:-}" >&2
             local deps="${MODULE_DEPENDS[$short]:-}"
             if [ -n "$deps" ]; then
-                printf '   Vereist: %s\n' "$deps"
+                printf '   Vereist: %s\n' "$deps" >&2
             fi
             ((index++))
         done
-        echo
+        echo >&2
         printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: ' >&2
         read -r input
         [ -z "$input" ] && break
