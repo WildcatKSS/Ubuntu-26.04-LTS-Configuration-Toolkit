@@ -39,6 +39,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Only toolkit logs (green text) shown on terminal; system command output (white text) hidden
   - All output still captured in logfile for debugging and troubleshooting
   - Applied to package management functions (`pkg_install`, `pkg_purge`, `pkg_update`)
+  - Applied to ALL system commands across all scripts for consistent clean output
+
+- **Complete Output Suppression**
+  - All system commands wrapped with `run_quiet()`:
+    - User management (useradd, chpasswd, usermod)
+    - Network configuration (hostname, netplan, ip, ss, ufw)
+    - System settings (timedatectl, locale, chronyc, sysctl)
+    - Service management (systemctl)
+    - Firewall and kernel (grub, augenrules)
+    - Package cleanup (apt-get autoremove, apt-get clean)
+  - Clean terminal with ONLY green toolkit logs
+  - Exit codes and command logic fully preserved
+  - Full output still available in logfile for troubleshooting
 
 ### Changed
 - **Static IP Address Default Updated**
