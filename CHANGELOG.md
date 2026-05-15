@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Runs netplan apply for immediate effect
   - Ensures IPv6 is fully disabled despite different boot/network stacks
 
+- **Fail2ban Service-Aware Jails**: Fail2ban now detects and configures jails based on running services
+  - Scans for ssh, postfix, dovecot and enables relevant jails
+  - Disables jails for non-running services (no spam from inactive jails)
+  - **New recidive jail**: Punishes repeat offenders with 7-day ban
+  - Jails now available: sshd, postfix-sasl, postfix-ratelimit, dovecot, recidive
+  - Mirrors intelligent service detection used for UFW firewall rules
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
