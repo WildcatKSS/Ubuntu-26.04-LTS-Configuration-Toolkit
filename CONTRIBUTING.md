@@ -36,7 +36,7 @@ lib/common.sh sources:
    ```bash
    #!/usr/bin/env bash
    # SPDX-License-Identifier: MIT
-   # Copyright (c) 2025 WildcatKSS
+   # Copyright (c) 2026 WildcatKSS
    # Ubuntu Server 26.04 LTS Configuration Toolkit
    #
    # MODULE:      50-myfeature

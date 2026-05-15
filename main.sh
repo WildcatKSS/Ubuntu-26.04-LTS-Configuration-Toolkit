@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2025 WildcatKSS
+# Copyright (c) 2026 WildcatKSS
 #
 # This program is licensed under the MIT License.
 # For the full license text, see LICENSE in the root directory.
