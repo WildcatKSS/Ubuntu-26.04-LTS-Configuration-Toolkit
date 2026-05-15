@@ -56,17 +56,21 @@ if plan_action "configure UFW (default deny in / allow out)"; then
     fi
 fi
 
+# Service-to-port and service-to-jail mappings (scanned once, used by UFW and fail2ban)
+declare -A SERVICE_RULES=(
+    [ssh]="22/tcp:SSH"
+    [postfix]="25/tcp:SMTP"
+    [dovecot]="143/tcp:IMAP"
+)
+declare -A SERVICE_JAILS=(
+    [ssh]="sshd"
+    [postfix]="postfix-sasl postfix-ratelimit"
+    [dovecot]="dovecot"
+)
+active_services=($(system_get_active_services "${!SERVICE_RULES[@]}"))
+
 # Add rules for running services
 if plan_action "configure UFW rules for active services"; then
-    declare -A SERVICE_RULES=(
-        [ssh]="22/tcp:SSH"
-        [postfix]="25/tcp:SMTP"
-        [dovecot]="143/tcp:IMAP"
-    )
-
-    # Get list of active services (scanned once)
-    active_services=($(system_get_active_services "${!SERVICE_RULES[@]}"))
-
     for service in "${active_services[@]}"; do
         IFS=':' read -r port comment <<< "${SERVICE_RULES[$service]}"
         if ! run_quiet ufw status | grep -q "$port"; then
@@ -124,17 +128,7 @@ if plan_action "install fail2ban and configure jails for active services"; then
     template="$TOOLKIT_ROOT/templates/fail2ban-jail.local"
     target="/etc/fail2ban/jail.local"
     if system_file_install "$template" "$target" 0644; then
-        # Map services to their fail2ban jails
-        declare -A SERVICE_JAILS=(
-            [ssh]="sshd"
-            [postfix]="postfix-sasl postfix-ratelimit"
-            [dovecot]="dovecot"
-        )
-
-        # Scan for active services once (reuse UFW scan)
-        active_services=($(system_get_active_services "${!SERVICE_JAILS[@]}"))
-
-        # Disable jails for inactive services
+        # Disable jails for inactive services (using active_services from above)
         for service in "${!SERVICE_JAILS[@]}"; do
             if [[ ! " ${active_services[@]} " =~ " ${service} " ]]; then
                 jails="${SERVICE_JAILS[$service]}"

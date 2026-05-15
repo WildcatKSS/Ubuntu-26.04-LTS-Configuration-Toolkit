@@ -124,6 +124,7 @@ system_service_is_loaded() {
 # system_service_is_masked <service>
 # Checks if a service is masked (disabled from starting)
 system_service_is_masked() {
+    local svc="$1"
     systemctl is-enabled "$svc" 2>/dev/null | grep -q masked
 }
 
@@ -209,9 +210,8 @@ system_write_file() {
 }
 
 # system_verify_ubuntu_26
-# Verifies system is Ubuntu Server 26.04 LTS
+# Verifies system is Ubuntu Server 26.04 LTS (single grep for efficiency)
 system_verify_ubuntu_26() {
     [ -f /etc/os-release ] || return 1
-    grep -q 'VERSION_ID="26\.04"' /etc/os-release && \
-        grep -q '^ID=ubuntu' /etc/os-release
+    grep -q 'VERSION_ID="26\.04"' /etc/os-release && grep -q '^ID=ubuntu' /etc/os-release
 }
