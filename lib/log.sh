@@ -100,3 +100,10 @@ log_check_diskspace() {
     fi
     return 0
 }
+
+# run_quiet <command> [args...]
+# Execute a command silently (suppress stdout/stderr to /dev/null)
+# Only the exit code is returned; logs are still written if command fails
+run_quiet() {
+    "$@" >/dev/null 2>&1
+}

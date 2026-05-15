@@ -27,7 +27,7 @@ pkg_install() {
         return 0
     fi
     log_info "Installing: ${to_install[*]}"
-    if ! apt-get install -y --no-install-recommends "${to_install[@]}"; then
+    if ! run_quiet apt-get install -y --no-install-recommends "${to_install[@]}"; then
         log_error "apt-get install failed for: ${to_install[*]}"
         return 1
     fi
@@ -47,7 +47,7 @@ pkg_purge() {
         return 0
     fi
     log_info "Purging: ${to_purge[*]}"
-    apt-get purge -y "${to_purge[@]}" || log_warn "Purge had errors for: ${to_purge[*]}"
+    run_quiet apt-get purge -y "${to_purge[@]}" || log_warn "Purge had errors for: ${to_purge[*]}"
 }
 
 # pkg_update — refresh apt indexes (cached for 60 minutes per run).
@@ -58,7 +58,7 @@ pkg_update() {
         return 0
     fi
     log_info "Running apt-get update"
-    if ! apt-get update -y; then
+    if ! run_quiet apt-get update -y; then
         log_error "apt-get update failed"
         return 1
     fi

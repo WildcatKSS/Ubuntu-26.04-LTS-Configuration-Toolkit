@@ -22,9 +22,9 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 if plan_action "apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y"; then
     pkg_update
     log_info "Running apt-get upgrade"
-    apt-get upgrade -y
+    run_quiet apt-get upgrade -y
     log_info "Running apt-get dist-upgrade"
-    apt-get dist-upgrade -y
+    run_quiet apt-get dist-upgrade -y
 fi
 
 # 2. Admin credentials (from questionnaire or environment)
