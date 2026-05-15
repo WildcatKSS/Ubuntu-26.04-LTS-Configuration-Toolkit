@@ -9,19 +9,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 1.1.7 – 2026-05-15
+
+### Added
+- **Cascade Deselect for Module Dependencies**
+  - When a user disables a module that other modules depend on, those
+    dependent modules are automatically deselected
+  - Prevents invalid module combinations where selected modules have
+    unmet dependencies
+  - Each cascaded deselection is logged with explanation
+  - Recursive: if module A depends on B, and B depends on C, disabling C
+    also disables B and A
+
+### Changed
+- **Module Selection Menu Layout**
+  - Removed blank line after "Huidige selectie:" header
+  - Removed empty description line (MODULE_DESC field currently unused)
+  - Combined module name and dependencies on a single aligned line
+  - Format: `N) [x] module-name             (vereist: dependency)`
+  - Cleaner, more compact display
+
 ### Fixed
-- **Module Selection Menu Display Bug**
-  - Fixed main menu not displaying correctly during interactive setup
+- **Module Selection Menu Display Bug (complete fix)**
+  - Fixed main menu not waiting for user input and closing immediately
+  - **Root cause #1:** `questionnaire_ask_modules()` was called via process
+    substitution `< <(questionnaire_ask_modules)` in `main.sh`. Bash
+    redirects stdin for the subshell in process substitution, causing
+    `read` inside the function to fail
+  - **Root cause #2:** `((index++))` returned exit code 1 when `index` was 0
+    (post-increment returns the OLD value, and `set -e` triggers when
+    arithmetic evaluates to 0). This was previously hidden because the
+    failure only killed the process-substitution subshell
+  - **Fix #1:** Refactored to populate the global `SELECTED_MODULES`
+    array directly; `main.sh` now calls the function without process
+    substitution so `read` can access the terminal
+  - **Fix #2:** Replaced `((index++))` with `index=$((index + 1))`
+    which always returns exit code 0
+  - **Fix #3:** Added graceful fallback if `read` fails (non-interactive
+    environment) — function continues with current selection instead of
+    crashing the script
+  - **Fix #4:** Earlier attempt (1.1.6 partial) added `/dev/tty` read for
+    terminal access; superseded by direct function call approach
+  - Menu now displays properly and correctly waits for user input
+
+- **Metadata Field Parser Bug (CRITICAL)**
+  - Fixed metadata parsing to properly trim leading spaces from `DEPENDS`, `DESC`, `IDEMPOTENT`, and `DESTRUCTIVE` fields
+  - Previously `${field# }` only removed the first space, leaving multiple leading spaces intact
+  - This caused cascade deselect and dependency checking to fail because grep patterns wouldn't match
+  - Changed to `${field#"${field%%[^ ]*}"}` to remove all leading whitespace
+  - **Impact:** Cascade deselect and cascade auto-select features now work correctly
+  - Fixes dependency resolution in questionnaire menus
+
+## 1.1.6 – 2026-05-15
+
+### Fixed
+- **Module Selection Menu Display Bug (second partial attempt)**
+  - Tried reading from `/dev/tty` to access the terminal directly for menu input
+  - Worked around the immediate symptom but did not address the underlying
+    process-substitution / `set -e` root causes
+  - Superseded by the complete fix in 1.1.7
+
+## 1.1.5 – 2026-05-15
+
+### Fixed
+- **Module Selection Menu Display Bug (first partial attempt)**
   - `questionnaire_ask_modules()` was sending menu UI messages to stdout
   - These messages were captured by the module selection read loop, breaking the interactive menu
   - All informational output now correctly redirected to stderr
-  - Module selection menu now displays properly and accepts user input correctly
+  - Note: this fix proved insufficient; further root causes addressed in 1.1.6 and 1.1.7
 
+## 1.1.4 – 2026-05-15
+
+### Fixed
 - **Dependency Parser Bug**
   - Fixed invalid `DEPENDS: none` syntax in `00-preflight.sh` module header
   - Parser now correctly recognizes empty `DEPENDS:` field for modules with no dependencies
   - Resolves "missing module: none" and "dependency cycle detected" errors
   - Allows `--list`, `--plan`, `--dry-run` flags to work correctly
+
+## 1.1.3 – 2026-05-15
+
+### Fixed
+- **`--dry-run` Flag Consistency**
+  - Ensured `TOOLKIT_PLAN_MODE` consistency for `--dry-run` mode in `main.sh`
+  - Aligns dry-run behaviour with plan mode expectations
+
+### Changed
+- **Documentation Reorganisation**
+  - Reorganised README sections for better logical flow
+  - Reorganised CONTRIBUTING sections for better learning flow
+  - Removed deprecated flags from README documentation (`--retry`, `--only`, `--skip`)
+  - Added missing `-v`/`--version` flag to README
+- Updated copyright year from 2025 to 2026 across the project
 
 ## 1.1.2 – 2026-05-14
 

@@ -331,25 +331,30 @@ questionnaire_run() {
 # questionnaire_ask_modules
 # Interactive module selection menu with checkbox-style interface.
 # Handles dependency resolution and prevents invalid combinations.
-# Outputs selected module short names (one per line).
+# Populates the global SELECTED_MODULES array directly (no stdout capture).
+# This avoids process-substitution issues where stdin is disconnected
+# from the terminal, which prevented the interactive `read` from working.
 # Note: Expects MODULE_PATHS, MODULE_NAME, MODULE_DESC, MODULE_DEPENDS globals from main.sh
+# Note: Populates the global SELECTED_MODULES array (declared in main.sh)
 questionnaire_ask_modules() {
+    SELECTED_MODULES=()
+
     if [ "${TOOLKIT_PLAN_MODE:-0}" = "1" ] || [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
         log_info "Skipping module selection (plan mode or non-interactive) — enabling all modules"
         local path
         for path in "${MODULE_PATHS[@]}"; do
-            echo "${MODULE_NAME[$path]}"
+            SELECTED_MODULES+=("${MODULE_NAME[$path]}")
         done
         return 0
     fi
 
-    echo >&2
+    echo
     log_info "=== Module Selection ==="
-    echo >&2
-    echo "Kies welke modules je wilt inschakelen." >&2
-    echo "Modules met dependencies worden automatisch ingeschakeld." >&2
-    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5" >&2
-    echo >&2
+    echo
+    echo "Kies welke modules je wilt inschakelen."
+    echo "Modules met dependencies worden automatisch ingeschakeld."
+    echo "Voer module nummers in (komma-gescheiden) om in/uit te schakelen, bijv.: 1,3,5"
+    echo
 
     declare -g -A QUESTIONNAIRE_SELECTED=()
     declare -a module_list=()
@@ -363,23 +368,25 @@ questionnaire_ask_modules() {
     done
 
     while true; do
-        echo "Huisje selectie:" >&2
-        echo >&2
+        echo "Huidige selectie:"
         index=0
         for short in "${module_list[@]}"; do
             local checkbox="[ ]"
             [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && checkbox="[x]"
-            printf '%d) %s %s\n' "$index" "$checkbox" "$short" >&2
-            printf '   %s\n' "${MODULE_DESC[$short]:-}" >&2
             local deps="${MODULE_DEPENDS[$short]:-}"
             if [ -n "$deps" ]; then
-                printf '   Vereist: %s\n' "$deps" >&2
+                printf '%d) %s %-25s (vereist: %s)\n' "$index" "$checkbox" "$short" "$deps"
+            else
+                printf '%d) %s %s\n' "$index" "$checkbox" "$short"
             fi
-            ((index++))
+            index=$((index + 1))
         done
-        echo >&2
-        printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: ' >&2
-        read -r input < /dev/tty || input=""
+        echo
+        printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: '
+        if ! read -r input; then
+            log_warn "Kon niet van stdin lezen (niet-interactieve omgeving?). Doorgaan met huidige selectie."
+            break
+        fi
         [ -z "$input" ] && break
 
         local to_toggle=()
@@ -393,6 +400,7 @@ questionnaire_ask_modules() {
                     QUESTIONNAIRE_SELECTED[$target]=0
                     log_info "Uitgeschakeld: $target"
                     questionnaire_check_broken_deps "$target"
+                    questionnaire_deselect_dependents "$target"
                 else
                     QUESTIONNAIRE_SELECTED[$target]=1
                     log_info "Ingeschakeld: $target"
@@ -406,7 +414,7 @@ questionnaire_ask_modules() {
     done
 
     for short in "${module_list[@]}"; do
-        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && echo "$short"
+        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && SELECTED_MODULES+=("$short")
     done
 }
 
@@ -568,4 +576,24 @@ EOF
 
     chmod 600 "$conf_file"
     log_info "Configuratiebestand aangemaakt: $conf_file (mode 600)"
+}
+
+# questionnaire_deselect_dependents <module_short>
+# Recursively deselect all modules that depend on the given module.
+questionnaire_deselect_dependents() {
+    local module="$1"
+    local short
+
+    for short in "${!MODULE_DEPENDS[@]}"; do
+        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" != "1" ] && continue
+        
+        local deps="${MODULE_DEPENDS[$short]:-}"
+        [ -z "$deps" ] && continue
+
+        if echo ",$deps," | grep -q ",$module,"; then
+            QUESTIONNAIRE_SELECTED[$short]=0
+            log_info "  (ook uitgeschakeld: $short — het vereist $module)"
+            questionnaire_deselect_dependents "$short"
+        fi
+    done
 }

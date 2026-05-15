@@ -116,10 +116,10 @@ discover_modules() {
         local line
         while IFS= read -r line; do
             case "$line" in
-                "# DESC:"*)        desc="${line#"# DESC:"}"; desc="${desc# }" ;;
-                "# DEPENDS:"*)     deps="${line#"# DEPENDS:"}"; deps="${deps# }" ;;
-                "# IDEMPOTENT:"*)  idem="${line#"# IDEMPOTENT:"}"; idem="${idem# }" ;;
-                "# DESTRUCTIVE:"*) destr="${line#"# DESTRUCTIVE:"}"; destr="${destr# }" ;;
+                "# DESC:"*)        desc="${line#"# DESC:"}"; desc="${desc#"${desc%%[^ ]*}"}" ;;
+                "# DEPENDS:"*)     deps="${line#"# DEPENDS:"}"; deps="${deps#"${deps%%[^ ]*}"}" ;;
+                "# IDEMPOTENT:"*)  idem="${line#"# IDEMPOTENT:"}"; idem="${idem#"${idem%%[^ ]*}"}" ;;
+                "# DESTRUCTIVE:"*) destr="${line#"# DESTRUCTIVE:"}"; destr="${destr#"${destr%%[^ ]*}"}" ;;
             esac
         done < <(head -n 20 "$path")
         MODULE_DESC[$short]="$desc"
@@ -469,10 +469,11 @@ main() {
     # Ask user to select modules BEFORE running full questionnaire
     # This way, module selection appears first, and questionnaire only asks
     # for config relevant to selected modules
+    # NOTE: We call questionnaire_ask_modules directly (not via process
+    # substitution) so that its `read` prompt can access the terminal.
+    # The function populates the global SELECTED_MODULES array directly.
     log_info "Loading module selection..."
-    while IFS= read -r module; do
-        SELECTED_MODULES+=("$module")
-    done < <(questionnaire_ask_modules)
+    questionnaire_ask_modules
 
     # Run questionnaire for interactive setup unless already done (plan/dry-run modes)
     if [ "$_questionnaire_done" -eq 0 ]; then
