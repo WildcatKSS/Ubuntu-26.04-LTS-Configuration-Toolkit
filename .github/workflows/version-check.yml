@@ -75,16 +75,30 @@ jobs:
           echo "✅ Version format valid: $PR_VERSION"
 
       - name: Check CHANGELOG updated
+        id: changelog-check
+        env:
+          BASE_VERSION: ${{ steps.base-version.outputs.base-version }}
+          PR_VERSION: ${{ steps.pr-version.outputs.pr-version }}
         run: |
           BASE_REF="${{ github.base_ref }}"
           if [ -z "$BASE_REF" ]; then
             BASE_REF="main"
           fi
-          if git diff "origin/$BASE_REF"...HEAD -- CHANGELOG.md | grep -q "## \[Unreleased\]"; then
-            echo "✅ CHANGELOG.md appears to be updated"
+
+          # If version was updated, check for new version section in CHANGELOG
+          if [ "$BASE_VERSION" != "$PR_VERSION" ]; then
+            if git show HEAD:CHANGELOG.md | grep -q "## $PR_VERSION"; then
+              echo "changelog-status=✅ Documented under version $PR_VERSION" >> $GITHUB_OUTPUT
+            else
+              echo "changelog-status=⚠️  Version $PR_VERSION not found in CHANGELOG (but can be added in release)" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "⚠️  CHANGELOG.md should document changes under [Unreleased] section"
-            echo "While not strictly enforced here, it helps with release notes"
+            # If version not changed, check for [Unreleased] section
+            if git diff "origin/$BASE_REF"...HEAD -- CHANGELOG.md | grep -q "## \[Unreleased\]"; then
+              echo "changelog-status=✅ Changes documented under [Unreleased]" >> $GITHUB_OUTPUT
+            else
+              echo "changelog-status=⚠️  Consider documenting changes under [Unreleased]" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Comment on PR
@@ -94,9 +108,10 @@ jobs:
           script: |
             const fs = require('fs');
             const version = fs.readFileSync('VERSION', 'utf8').trim();
+            const changelogStatus = '${{ steps.changelog-check.outputs.changelog-status }}';
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `✅ **Version Check Passed**\n\n- Version: \`${version}\`\n- Format: Valid semantic version\n- CHANGELOG: Recommended to update [Unreleased] section`
+              body: `✅ **Version Check Passed**\n\n- Version: \`${version}\`\n- Format: Valid semantic version\n- CHANGELOG: ${changelogStatus}`
             });
