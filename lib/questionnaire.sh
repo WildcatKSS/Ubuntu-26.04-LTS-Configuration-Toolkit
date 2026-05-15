@@ -125,10 +125,6 @@ questionnaire_run() {
     echo "zorg dat deze gebruiker correct is ingesteld voordat je doorgaat."
     echo
 
-    if [ "${ADMIN_MODE_CREATE_USER:-}" = "skip" ]; then
-        log_info "Beheerder configuratie overgeslagen (ADMIN_MODE_CREATE_USER=skip)"
-    else
-
     log_info "Wat wil je doen met de beheerder?"
     echo "  1. Nieuwe sudo gebruiker aanmaken"
     echo "  2. Wachtwoord wijzigen van een bestaande sudo gebruiker"
@@ -190,8 +186,6 @@ questionnaire_run() {
                 ;;
         esac
     done
-
-    fi  # end ADMIN_MODE_CREATE_USER != skip
 
     echo
 
