@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
-## [Unreleased]
+## 1.1.8 – 2026-05-15
 
 ### Fixed
 - **Service Verification Check in Cleanup Module**
@@ -31,8 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Execution time calculated for each module
   - Total execution time displayed at end
   - Better formatting for at-a-glance performance metrics
-
-## 1.1.8 – 2026-05-15
 
 ### Changed
 - **Consistent Boolean Question Format**
