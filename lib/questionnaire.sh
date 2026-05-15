@@ -401,6 +401,7 @@ questionnaire_ask_modules() {
                     QUESTIONNAIRE_SELECTED[$target]=0
                     log_info "Uitgeschakeld: $target"
                     questionnaire_check_broken_deps "$target"
+                    questionnaire_deselect_dependents "$target"
                 else
                     QUESTIONNAIRE_SELECTED[$target]=1
                     log_info "Ingeschakeld: $target"
@@ -576,4 +577,24 @@ EOF
 
     chmod 600 "$conf_file"
     log_info "Configuratiebestand aangemaakt: $conf_file (mode 600)"
+}
+
+# questionnaire_deselect_dependents <module_short>
+# Recursively deselect all modules that depend on the given module.
+questionnaire_deselect_dependents() {
+    local module="$1"
+    local short
+
+    for short in "${!MODULE_DEPENDS[@]}"; do
+        [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" != "1" ] && continue
+        
+        local deps="${MODULE_DEPENDS[$short]:-}"
+        [ -z "$deps" ] && continue
+
+        if echo ",$deps," | grep -q ",$module,"; then
+            QUESTIONNAIRE_SELECTED[$short]=0
+            log_info "  (ook uitgeschakeld: $short — het vereist $module)"
+            questionnaire_deselect_dependents "$short"
+        fi
+    done
 }
