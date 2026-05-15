@@ -78,9 +78,6 @@ log_info()  { _log_write "INFO"  "$_LOG_COLOR_INFO"  "$*"; }
 log_warn()  { _log_write "WARN"  "$_LOG_COLOR_WARN"  "$*"; }
 log_error() {
     _log_write "ERROR" "$_LOG_COLOR_ERROR" "$*"
-    if [ -n "$TOOLKIT_LOG_FILE" ] && [ -f "$TOOLKIT_LOG_FILE" ]; then
-        printf 'FAILURE: Run grep ERROR %s for details\n' "$TOOLKIT_LOG_FILE" >&2
-    fi
 }
 
 # log_check_diskspace <path> [min_mb]
