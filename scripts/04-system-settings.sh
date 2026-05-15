@@ -15,8 +15,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Timezone
 if [ "$PLAN_MODE" = "1" ]; then
     log_info "PLAN: would set timezone to $TIMEZONE"
@@ -54,10 +52,9 @@ else
     system_service_mask systemd-timesyncd
     pkg_install chrony
 
-    chrony_conf="/etc/chrony/chrony.conf"
+    chrony_conf="$TOOLKIT_CHRONY_CONF"
     [ -f "$chrony_conf" ] || chrony_conf="/etc/chrony.conf"
 
-    tmp="$(mktemp)"
     {
         echo "# Managed by ubuntu-26-toolkit"
         for srv in "${NTP_SERVERS[@]}"; do
@@ -73,20 +70,10 @@ rtcsync
 keyfile /etc/chrony/chrony.keys
 logdir /var/log/chrony
 EOF
-    } > "$tmp"
+    } | system_write_file "$chrony_conf" 0644
 
-    if [ -f "$chrony_conf" ] && cmp -s "$tmp" "$chrony_conf"; then
-        log_info "chrony.conf unchanged"
-        rm -f "$tmp"
-    else
-        if [ -f "$chrony_conf" ] && [ ! -f "${chrony_conf}.toolkit.bak" ]; then
-            cp "$chrony_conf" "${chrony_conf}.toolkit.bak"
-        fi
-        install -m 0644 "$tmp" "$chrony_conf"
-        rm -f "$tmp"
-        run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
-            || log_warn "chrony restart failed"
-    fi
+    run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
+        || log_warn "chrony restart failed"
     system_service_enable_start chrony || system_service_enable_start chronyd || true
 
     if command -v chronyc >/dev/null 2>&1; then
