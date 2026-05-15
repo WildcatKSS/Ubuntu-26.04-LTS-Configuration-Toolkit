@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Recursive: if module A depends on B, and B depends on C, disabling C
     also disables B and A
 
+### Changed
+- **Module Selection Menu Layout**
+  - Removed blank line after "Huidige selectie:" header
+  - Removed empty description line (MODULE_DESC field currently unused)
+  - Combined module name and dependencies on a single aligned line
+  - Format: `N) [x] module-name             (vereist: dependency)`
+  - Cleaner, more compact display
+
 ### Fixed
 - **Module Selection Menu Display Bug**
   - Fixed main menu not waiting for user input and closing immediately
