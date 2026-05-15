@@ -354,7 +354,9 @@ run_module() {
     start_ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local rc=0
     local env_vars=("TOOLKIT_ROOT=$TOOLKIT_ROOT")
-    [ "$FLAG_PLAN" -eq 1 ] && env_vars+=("TOOLKIT_PLAN_MODE=1")
+    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+        env_vars+=("TOOLKIT_PLAN_MODE=1")
+    fi
 
     if env "${env_vars[@]}" bash "$path"; then
         log_info "===== END   $short (started $start_ts; ok) ====="
