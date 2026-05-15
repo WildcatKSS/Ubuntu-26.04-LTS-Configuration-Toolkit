@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.1.8 – 2026-05-15
 
 ### Changed
+- **Disk Usage Alert Threshold Simplified**
+  - Removed interactive question for disk usage threshold
+  - Now uses fixed default value of 85%
+  - Reduces setup configuration steps
+  - Can still be customized by editing config file if needed
+
 - **Project Language Changed to English**
   - All interactive prompts and user-facing messages translated from Dutch to English
   - Interactive setup questionnaire now fully in English
