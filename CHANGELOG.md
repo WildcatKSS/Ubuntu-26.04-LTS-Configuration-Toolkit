@@ -79,10 +79,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Module Selection Menu Layout**
-  - Removed blank line after "Huidige selectie:" header
+  - Removed blank line after "Current selection:" header
   - Removed empty description line (MODULE_DESC field currently unused)
   - Combined module name and dependencies on a single aligned line
-  - Format: `N) [x] module-name             (vereist: dependency)`
+  - Format: `N) [x] module-name             (requires: dependency)`
   - Cleaner, more compact display
 
 ### Fixed
