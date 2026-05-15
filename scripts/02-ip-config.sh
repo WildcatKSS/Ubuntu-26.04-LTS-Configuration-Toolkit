@@ -80,13 +80,21 @@ if plan_action "render $template -> $target and run netplan apply"; then
     # Only apply netplan if file actually changed (return 0), not if unchanged (return 2)
     if [ "$install_result" -eq 0 ]; then
         # 5. Apply with auto-restore on connectivity failure
-        if ! run_quiet netplan apply; then
+        netplan_err=$(mktemp)
+        if ! netplan apply >"$netplan_err" 2>&1; then
             log_error "netplan apply failed — restoring backup"
+            log_error "netplan output: $(cat "$netplan_err")"
+            rm -f "$netplan_err"
             rm -f "$target"
             cp -a /etc/netplan.backup/. /etc/netplan/
-            run_quiet netplan apply || true
+            netplan apply >/dev/null 2>&1 || true
             exit 1
         fi
+        # Log any warnings netplan may have printed even on success
+        if [ -s "$netplan_err" ]; then
+            log_warn "netplan apply output: $(cat "$netplan_err")"
+        fi
+        rm -f "$netplan_err"
         sleep 3
 
         target_ip="$GATEWAY"
@@ -95,7 +103,7 @@ if plan_action "render $template -> $target and run netplan apply"; then
             log_error "Connectivity test failed (no reply from $target_ip) — restoring backup"
             rm -f "$target"
             cp -a /etc/netplan.backup/. /etc/netplan/
-            run_quiet netplan apply || true
+            netplan apply >/dev/null 2>&1 || true
             exit 1
         fi
         log_info "Connectivity verified ($target_ip reachable)"
