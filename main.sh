@@ -455,8 +455,15 @@ main() {
             config_create_defaults
             _questionnaire_done=1
         else
-            # For interactive mode, will prompt after module selection
-            log_info "Config file not found; will create after module selection"
+            # For interactive mode, pre-load example config so questionnaire shows
+            # its values as defaults rather than hardcoded fallbacks
+            local example_conf="$TOOLKIT_ROOT/config/defaults.conf.example"
+            if [ -f "$example_conf" ]; then
+                log_info "Config file not found; loading defaults from $(basename "$example_conf")"
+                config_load "$example_conf" || true
+            else
+                log_info "Config file not found; will create after module selection"
+            fi
             _questionnaire_done=0
         fi
     else
