@@ -12,14 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Module Selection Menu Display Bug**
   - Fixed main menu not waiting for user input and closing immediately
-  - **Root cause:** `questionnaire_ask_modules()` was called via process substitution
-    `< <(questionnaire_ask_modules)` in `main.sh`. Bash redirects stdin to
-    `/dev/null` for the subshell in process substitution, causing `read`
-    inside the function to return immediately with empty input
-  - **Fix:** Refactored to populate the global `SELECTED_MODULES` array
-    directly inside `questionnaire_ask_modules()` instead of writing to stdout
-  - `main.sh` now calls `questionnaire_ask_modules` directly without
-    process substitution, allowing `read` to access the terminal normally
+  - **Root cause #1:** `questionnaire_ask_modules()` was called via process
+    substitution `< <(questionnaire_ask_modules)` in `main.sh`. Bash
+    redirects stdin for the subshell in process substitution, causing
+    `read` inside the function to fail
+  - **Root cause #2:** `((index++))` returned exit code 1 when `index` was 0
+    (post-increment returns the OLD value, and `set -e` triggers when
+    arithmetic evaluates to 0). This was previously hidden because the
+    failure only killed the process-substitution subshell
+  - **Fix #1:** Refactored to populate the global `SELECTED_MODULES`
+    array directly; `main.sh` now calls the function without process
+    substitution so `read` can access the terminal
+  - **Fix #2:** Replaced `((index++))` with `index=$((index + 1))`
+    which always returns exit code 0
+  - **Fix #3:** Added graceful fallback if `read` fails (non-interactive
+    environment) — function continues with current selection instead of
+    crashing the script
   - Menu now displays properly and correctly waits for user input
 
 - **Dependency Parser Bug**

@@ -380,11 +380,14 @@ questionnaire_ask_modules() {
             if [ -n "$deps" ]; then
                 printf '   Vereist: %s\n' "$deps"
             fi
-            ((index++))
+            index=$((index + 1))
         done
         echo
         printf 'Toggle modules (nummers gescheiden door komma), of druk Enter om door te gaan: '
-        read -r input
+        if ! read -r input; then
+            log_warn "Kon niet van stdin lezen (niet-interactieve omgeving?). Doorgaan met huidige selectie."
+            break
+        fi
         [ -z "$input" ] && break
 
         local to_toggle=()
