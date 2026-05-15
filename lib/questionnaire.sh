@@ -38,7 +38,7 @@ config_create_defaults() {
     export ADMIN_MODE_CREATE_USER="yes"
     export TOOLKIT_LOG_LEVEL="debug"
     export NETWORK_INTERFACE="ens3"
-    export USE_DHCP="false"
+    export USE_DHCP="true"
     export IP_ADDRESS="192.168.1.10"
     export PREFIX_LENGTH="24"
     export GATEWAY="192.168.1.1"
@@ -226,7 +226,7 @@ questionnaire_run() {
     NETWORK_INTERFACE=$(questionnaire_prompt_string "Naam van het netwerkinterface" "ens3")
     export NETWORK_INTERFACE
 
-    USE_DHCP=$(questionnaire_prompt_string "DHCP gebruiken? (true/false)" "false")
+    USE_DHCP=$(questionnaire_prompt_string "DHCP gebruiken? (true/false)" "true")
     export USE_DHCP
 
     if [ "$USE_DHCP" = "false" ]; then

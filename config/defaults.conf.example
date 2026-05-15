@@ -13,7 +13,7 @@ TOOLKIT_LOG_LEVEL="debug"            # debug | info | warn | error
 # Network
 # ---------------------------------------------------------------------------
 NETWORK_INTERFACE="ens3"
-USE_DHCP="false"                  # true for DHCP, false for static IP
+USE_DHCP="true"                   # true for DHCP, false for static IP
 IP_ADDRESS="192.168.1.10"         # only used if USE_DHCP=false
 PREFIX_LENGTH="24"                # only used if USE_DHCP=false
 GATEWAY="192.168.1.1"             # only used if USE_DHCP=false
