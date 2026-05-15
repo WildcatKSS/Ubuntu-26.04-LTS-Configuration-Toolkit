@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 # SPDX-License-Identifier: MIT
-# Copyright (c) 2025 WildcatKSS
+# Copyright (c) 2026 WildcatKSS
 #
 # This program is licensed under the MIT License.
 # For the full license text, see LICENSE in the root directory.
@@ -354,7 +354,9 @@ run_module() {
     start_ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local rc=0
     local env_vars=("TOOLKIT_ROOT=$TOOLKIT_ROOT")
-    [ "$FLAG_PLAN" -eq 1 ] && env_vars+=("TOOLKIT_PLAN_MODE=1")
+    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+        env_vars+=("TOOLKIT_PLAN_MODE=1")
+    fi
 
     if env "${env_vars[@]}" bash "$path"; then
         log_info "===== END   $short (started $start_ts; ok) ====="
@@ -438,7 +440,9 @@ main() {
     # Load questionnaire library early for config generation
     # shellcheck source=lib/questionnaire.sh
     source "$TOOLKIT_ROOT/lib/questionnaire.sh"
-    [ "$FLAG_PLAN" -eq 1 ] && export TOOLKIT_PLAN_MODE=1
+    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
+        export TOOLKIT_PLAN_MODE=1
+    fi
 
     # Load and validate config
     local conf="$TOOLKIT_ROOT/config/defaults.conf"

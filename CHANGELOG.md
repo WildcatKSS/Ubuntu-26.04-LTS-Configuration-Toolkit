@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Releases
 
-## [1.1.2] – 2026-05-14
+## 1.1.2 – 2026-05-14
 
 ### Fixed
 - **Module Discovery Bug**
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Restricted module discovery pattern to `[0-9][0-9]-*.sh` to match only numbered modules (00-99 range)
   - Aligns with documented module naming convention
 
-## [1.1.1] – 2026-05-14
+## 1.1.1 – 2026-05-14
 
 ### Fixed
 - **Main Script Configuration Handling**
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config loading flow refactored for better handling of plan/dry-run modes
 - Enhanced sensible defaults for headless/automated deployments
 
-## [1.1.0] – 2026-05-14
+## 1.1.0 – 2026-05-14
 
 ### Added
 - **Interactive Module Selection Questionnaire**
@@ -62,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TOOLKIT_NONINTERACTIVE=1` skips questionnaire and enables all modules
 - `TOOLKIT_PLAN_MODE=1` skips questionnaire and shows all modules
 
-## [1.0.2] – 2026-05-13
+## 1.0.2 – 2026-05-13
 
 ### Changed
 - **Code Quality Refactoring**: Introduced `lib/plan.sh` with `plan_action()` helper function
@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DNS Configuration**: Added bounds checking for DNS_SERVERS array in 02-ip-config.sh
   - Now warns if DNS_SERVERS is empty instead of silently continuing
 
-## [1.0.1] – 2026-05-13
+## 1.0.1 – 2026-05-13
 
 ### Changed
 - Tests now run **only** with explicit `--test` flag
@@ -98,9 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Security-related fixes
 
----
-
-## [1.0.0] – Ubuntu Server 26.04 LTS Configuration Toolkit – 2026-05-13
+## 1.0.0 – 2026-05-13
 
 ### Added
 - **Initial stable release** of Ubuntu Server 26.04 LTS Configuration Toolkit

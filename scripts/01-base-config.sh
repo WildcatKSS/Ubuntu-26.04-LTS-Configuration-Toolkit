@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
-# Copyright (c) 2025 WildcatKSS
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 01-base-config
-# DESC: System update, admin sudo user, unattended-upgrades
-# DEPENDS: 00-preflight
-# IDEMPOTENT: yes
+# MODULE:      01-base-config
+# SUMMARY:     System update, admin sudo user, unattended-upgrades
+# DEPENDS:     00-preflight
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
+# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

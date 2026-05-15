@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
-# Copyright (c) 2025 WildcatKSS
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 03-network-hardening
-# DESC: Disable cloud-init, remove NetworkManager, enable systemd-networkd, UFW (SSH-only), disable IPv6, fail2ban
-# DEPENDS: 02-ip-config
-# IDEMPOTENT: yes
+# MODULE:      03-network-hardening
+# SUMMARY:     Disable cloud-init, UFW (SSH-only), IPv6, fail2ban
+# DEPENDS:     02-ip-config
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
+# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

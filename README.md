@@ -24,35 +24,30 @@ git pull origin main
 
 ---
 
-## Development Setup (for contributors)
+## Flags
 
-If you're contributing code changes, set up development hooks:
+```
+Inspection / preview:
+  --list                Print discovered modules with metadata and exit.
+  --plan                Read-only audit: modules report what they would change.
+  --dry-run             Run scripts with bash -n (syntax check, no execution).
 
-```bash
-bash scripts/setup-hooks.sh
+Execution control:
+  --resume              Skip modules already recorded as complete.
+  --force               Re-run all modules, even completed ones.
+  --ignore-errors       Continue when a non-critical module exits non-zero.
+  --test                Run end-to-end idempotency validation (CI/CD mode).
+  -h, --help            Show this help and exit.
+  -v, --version         Show version and exit.
 ```
 
-This enables automatic checks for:
-- ✅ VERSION file updates on code changes
-- ✅ Semantic versioning validation
-- ✅ CHANGELOG.md updates
+### Flag conflict resolution
 
-**When making a PR**, update VERSION and CHANGELOG.md with your changes:
-```bash
-# See current version
-cat VERSION
-
-# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
-echo "1.1.0" > VERSION
-
-# Update CHANGELOG.md under [Unreleased] section
-vi CHANGELOG.md
-
-# Commit (hooks will validate)
-git commit -am "Your changes"
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+| Combination | Behaviour |
+|---|---|
+| `--force` + `--resume` | `--force` wins (re-run all) |
+| `--plan` + others | `--plan` wins (no changes) |
+| `--list` + others | `--list` only (print and exit) |
 
 ---
 
@@ -82,33 +77,22 @@ interactively (or supplied via env var for unattended runs):
 
 ---
 
-## Flags
+## Unattended mode
 
-```
-Inspection / preview:
-  --list                Print discovered modules with metadata and exit.
-  --plan                Read-only audit: modules report what they would change.
-  --dry-run             Run scripts with bash -n (syntax check, no execution).
-
-Execution control:
-  --resume              Skip modules already recorded as complete.
-  --force               Re-run all modules, even completed ones.
-  --retry=<module>      Re-run a single previously-failed module.
-  --only=<module>       Run only this module (and its prerequisites).
-  --skip=<m1,m2,...>    Skip these modules (comma-separated short names).
-  --ignore-errors       Continue when a non-critical module exits non-zero.
-  --test                Run end-to-end idempotency validation (CI/CD mode).
-  -h, --help            Show this help and exit.
+```bash
+ADMIN_USER=sysadmin \
+ADMIN_PASSWORD='change-me-please' \
+TOOLKIT_NONINTERACTIVE=1 \
+sudo -E ./main.sh
 ```
 
-### Flag conflict resolution
+Recommended secure pattern (avoids passwords in shell history):
 
-| Combination | Behaviour |
-|---|---|
-| `--force` + `--resume` | `--force` wins (re-run all) |
-| `--plan` + others | `--plan` wins (no changes) |
-| `--only` + `--skip` | `--skip` removes from the filtered set |
-| `--list` + others | `--list` only (print and exit) |
+```bash
+chmod 600 .env
+set -a; source .env; set +a
+sudo -E ./main.sh
+```
 
 ---
 
@@ -118,11 +102,12 @@ Modules live in `scripts/` and are auto-discovered alphabetically. Each module
 declares its metadata in a header:
 
 ```bash
-# MODULE: 06-hardening
-# DESC:   Kernel sysctl hardening, AppArmor verification, auditd setup
-# DEPENDS: 05-packages
-# IDEMPOTENT: yes
+# MODULE:      06-hardening
+# SUMMARY:     Kernel sysctl hardening, AppArmor verification, auditd setup
+# DEPENDS:     05-packages
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
 ```
 
 | # | Script | What it does |
@@ -171,31 +156,12 @@ or `sudo ./main.sh --force` to re-run everything from scratch.
 
 ---
 
-## Unattended mode
-
-```bash
-ADMIN_USER=sysadmin \
-ADMIN_PASSWORD='change-me-please' \
-TOOLKIT_NONINTERACTIVE=1 \
-sudo -E ./main.sh
-```
-
-Recommended secure pattern (avoids passwords in shell history):
-
-```bash
-chmod 600 .env
-set -a; source .env; set +a
-sudo -E ./main.sh
-```
-
----
-
 ## Troubleshooting / quick recovery
 
 | Symptom | Fix |
 |---|---|
 | Network broken after `02-ip-config` | `cp -a /etc/netplan.backup/. /etc/netplan/ && netplan apply` |
-| One module failed | `sudo ./main.sh --retry=<module-name>` |
+| One module failed | `sudo ./main.sh --resume` (continue from where it failed) |
 | Need to re-run from scratch | `sudo ./main.sh --force` |
 | `--list` shows wrong dependency | Inspect the `# DEPENDS:` header in the module |
 
@@ -203,6 +169,38 @@ Inspect the log for ERROR lines:
 ```bash
 grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 ```
+
+---
+
+## Development Setup (for contributors)
+
+If you're contributing code changes, set up development hooks:
+
+```bash
+bash scripts/setup-hooks.sh
+```
+
+This enables automatic checks for:
+- ✅ VERSION file updates on code changes
+- ✅ Semantic versioning validation
+- ✅ CHANGELOG.md updates
+
+**When making a PR**, update VERSION and CHANGELOG.md with your changes:
+```bash
+# See current version
+cat VERSION
+
+# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
+echo "1.1.0" > VERSION
+
+# Update CHANGELOG.md under Releases section
+vi CHANGELOG.md
+
+# Commit (hooks will validate)
+git commit -am "Your changes"
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 

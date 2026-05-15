@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Ubuntu Server 26.04 LTS Configuration Toolkit - SPDX-License-Identifier: MIT
-# Copyright (c) 2025 WildcatKSS
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 WildcatKSS
+# Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE: 08-mail-alerting
-# DESC: Postfix relay, daily report cron, disk/service alert cron with local fallback
-# DEPENDS: 07-monitoring
-# IDEMPOTENT: yes
+# MODULE:      08-mail-alerting
+# SUMMARY:     Postfix relay, daily report cron, disk/service alerts
+# DEPENDS:     07-monitoring
+# IDEMPOTENT:  yes
 # DESTRUCTIVE: no
+# ADDED:       1.0.0
+# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"

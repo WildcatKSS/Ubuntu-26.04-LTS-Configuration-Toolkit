@@ -35,11 +35,16 @@ lib/common.sh sources:
 
    ```bash
    #!/usr/bin/env bash
-   # MODULE: 50-myfeature
-   # DESC: Short, one-line description
-   # DEPENDS: 05-packages
-   # IDEMPOTENT: yes
+   # SPDX-License-Identifier: MIT
+   # Copyright (c) 2026 WildcatKSS
+   # Ubuntu Server 26.04 LTS Configuration Toolkit
+   #
+   # MODULE:      50-myfeature
+   # SUMMARY:     Short, one-line description of the module
+   # DEPENDS:     05-packages
+   # IDEMPOTENT:  yes
    # DESTRUCTIVE: no
+   # ADDED:       1.1.0
 
    set -euo pipefail
    TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -49,21 +54,17 @@ lib/common.sh sources:
    ...
    ```
 
-2. **Always** check state before changing state. Examples:
-   - `pkg_install` already skips already-installed packages — use it
-   - `system_file_install` only writes when the source/destination differ
-   - For custom checks: `grep -q FOO /etc/file || sed -i '...' /etc/file`
+2. Make the script executable: `chmod +x scripts/50-myfeature.sh`.
 
-3. Honour `TOOLKIT_PLAN_MODE=1`: when set, your module should print what it
-   *would* change but not perform writes.
+---
 
-4. Distinguish critical vs non-critical errors:
-   - Critical (data loss, broken system): `log_error "..."; exit 1`
-   - Non-critical (transient service issue): `log_warn "..."` and continue
+## Code style
 
-5. Add a BATS test in `tests/` if your module exposes helper functions.
-
-6. Make the script executable: `chmod +x scripts/50-myfeature.sh`.
+- **Always** `set -euo pipefail` at the top of executable scripts.
+- **Always** quote variable expansions: `"$VAR"`, `"${ARRAY[@]}"`.
+- Run `shellcheck -x -e SC1091,SC2034` on your script before committing.
+- Use `log_info`/`log_warn`/`log_error` instead of `echo`.
+- Use `pkg_install` / `system_file_install` rather than raw `apt-get` / `cp`.
 
 ---
 
@@ -103,6 +104,18 @@ Every module MUST be safe to run multiple times. The BATS test
 End-to-end idempotency (run-twice-no-change) is verified manually on a VM —
 see the README troubleshooting section for the procedure.
 
+**Always check state before changing state.** Examples:
+- `pkg_install` already skips already-installed packages — use it
+- `system_file_install` only writes when the source/destination differ
+- For custom checks: `grep -q FOO /etc/file || sed -i '...' /etc/file`
+
+**Honour `TOOLKIT_PLAN_MODE=1`:** when set, your module should print what it
+*would* change but not perform writes.
+
+**Distinguish critical vs non-critical errors:**
+- Critical (data loss, broken system): `log_error "..."; exit 1`
+- Non-critical (transient service issue): `log_warn "..."` and continue
+
 ---
 
 ## State persistence
@@ -113,20 +126,37 @@ read/write it; never hardcode the path.
 
 ---
 
-## Code style
+## Hooks
 
-- **Always** `set -euo pipefail` at the top of executable scripts.
-- **Always** quote variable expansions: `"$VAR"`, `"${ARRAY[@]}"`.
-- Run `shellcheck -x -e SC1091,SC2034` on your script before committing.
-- Use `log_info`/`log_warn`/`log_error` instead of `echo`.
-- Use `pkg_install` / `system_file_install` rather than raw `apt-get` / `cp`.
+Two optional hook locations are auto-discovered:
+
+```
+scripts/hooks/pre-<module-name>.sh
+scripts/hooks/post-<module-name>.sh
+```
+
+Hooks share the same metadata header convention but are non-critical: a hook
+that exits non-zero logs an ERROR and execution continues.
+
+---
+
+## Testing locally
+
+```bash
+sudo apt-get install -y shellcheck bats
+bash -n scripts/*.sh lib/*.sh main.sh
+shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
+bats tests/
+```
+
+Add a BATS test in `tests/` if your module exposes helper functions.
 
 ---
 
 ## Changelog maintenance
 
 Every code change should include a corresponding entry in `CHANGELOG.md` under
-the `[Unreleased]` section. The changelog follows the
+the `Releases` section. The changelog follows the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
 **When to update the changelog:**
@@ -137,7 +167,7 @@ the `[Unreleased]` section. The changelog follows the
 **How to add a changelog entry:**
 
 ```markdown
-## [Unreleased]
+## Releases
 
 ### Added
 - New feature description
@@ -164,6 +194,20 @@ git add CHANGELOG.md
 git commit --amend --no-edit
 # 4. Try committing again
 ```
+
+---
+
+## Commit message format
+
+Prefix the commit subject with the affected module in square brackets:
+
+```
+[06-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
+[lib/state] fix race when promoting state file
+[lib/log] bump default log level
+```
+
+Keep the subject under 70 characters and explain the *why* in the body.
 
 ---
 
@@ -194,9 +238,9 @@ Version numbering (choose one):
    git add VERSION
    ```
 
-3. **Update CHANGELOG.md** (under `[Unreleased]`):
+3. **Update CHANGELOG.md** (under `Releases`):
    ```markdown
-   ## [Unreleased]
+   ## Releases
 
    ### Added
    - New module 04-example for feature X
@@ -234,9 +278,9 @@ This installs a pre-commit hook that:
 
 When preparing a release:
 
-1. **Finalize CHANGELOG.md**: Move `[Unreleased]` content to a new `[X.Y.Z] – YYYY-MM-DD` section
+1. **Finalize CHANGELOG.md**: Move `Releases` content to a new `X.Y.Z – YYYY-MM-DD` section
    ```markdown
-   ## [1.1.0] – 2026-05-20
+   ## 1.1.0 – 2026-05-20
 
    ### Added
    - New module 04-example
@@ -266,43 +310,4 @@ When preparing a release:
 # or in a script:
 source lib/version.sh
 VERSION=$(toolkit_get_version)
-```
-
----
-
-## Commit message format
-
-Prefix the commit subject with the affected module in square brackets:
-
-```
-[06-hardening] add new sysctl rule for kernel.unprivileged_bpf_disabled
-[lib/state] fix race when promoting state file
-[lib/log] bump default log level
-```
-
-Keep the subject under 70 characters and explain the *why* in the body.
-
----
-
-## Hooks
-
-Two optional hook locations are auto-discovered:
-
-```
-scripts/hooks/pre-<module-name>.sh
-scripts/hooks/post-<module-name>.sh
-```
-
-Hooks share the same metadata header convention but are non-critical: a hook
-that exits non-zero logs an ERROR and execution continues.
-
----
-
-## Testing locally
-
-```bash
-sudo apt-get install -y shellcheck bats
-bash -n scripts/*.sh lib/*.sh main.sh
-shellcheck -x -e SC1091,SC2034 scripts/*.sh lib/*.sh main.sh
-bats tests/
 ```
