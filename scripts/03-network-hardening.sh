@@ -43,22 +43,37 @@ if plan_action "ensure systemd-networkd is enabled and active"; then
     system_service_enable_start systemd-networkd || true
 fi
 
-# 4. UFW
-if plan_action "configure UFW (default deny in / allow out, allow SSH)"; then
+# 4. UFW with service-aware rules
+if plan_action "configure UFW (default deny in / allow out)"; then
     pkg_install ufw
     if run_quiet ufw status | grep -q 'Status: active'; then
-        log_info "UFW already active — verifying SSH rule"
+        log_info "UFW already active"
     else
         run_quiet ufw --force reset
         run_quiet ufw default deny incoming
         run_quiet ufw default allow outgoing
-        run_quiet ufw allow 22/tcp comment 'SSH'
         run_quiet ufw --force enable
-        log_info "UFW enabled with SSH rule"
+        log_info "UFW enabled"
     fi
-    if ! run_quiet ufw status | grep -q '22/tcp'; then
-        run_quiet ufw allow 22/tcp comment 'SSH'
-    fi
+fi
+
+# Add rules for running services
+if plan_action "configure UFW rules for active services"; then
+    declare -A SERVICE_RULES=(
+        [ssh]="22/tcp:SSH"
+        [postfix]="25/tcp:SMTP"
+        [dovecot]="143/tcp:IMAP"
+    )
+
+    for service in "${!SERVICE_RULES[@]}"; do
+        if run_quiet systemctl is-active --quiet "$service"; then
+            IFS=':' read -r port comment <<< "${SERVICE_RULES[$service]}"
+            if ! run_quiet ufw status | grep -q "$port"; then
+                run_quiet ufw allow "$port" comment "$comment"
+                log_info "UFW: allowed $port ($comment) — service $service is running"
+            fi
+        fi
+    done
 fi
 
 # 5. Disable IPv6 (sysctl + grub)
