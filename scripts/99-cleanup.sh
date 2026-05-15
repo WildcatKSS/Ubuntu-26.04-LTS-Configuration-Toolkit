@@ -41,14 +41,3 @@ done
 if [ -f /var/run/reboot-required ]; then
     log_warn "REBOOT REQUIRED to finalise kernel/system upgrades"
 fi
-
-echo
-echo "=================================================="
-echo "  Ubuntu Server 26.04 toolkit setup complete"
-echo "=================================================="
-echo "  State file: $(state_active_path)"
-echo "  Log file:   ${TOOLKIT_LOG_FILE:-/var/log/toolkit-setup/toolkit-setup.log}"
-echo
-echo "Completed modules:"
-state_summary
-echo
