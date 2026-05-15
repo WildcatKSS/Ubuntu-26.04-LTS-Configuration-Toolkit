@@ -3,8 +3,8 @@
 # Copyright (c) 2026 WildcatKSS
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
-# MODULE:      98-log-error-parser
-# SUMMARY:     Scan system logs (7d), detect error patterns, deduplicate, output JSON report
+# MODULE:      98-log-analyser
+# SUMMARY:     Scan system logs (7d), analyze patterns, deduplicate, output JSON report
 # DEPENDS:
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
@@ -352,7 +352,7 @@ logparser_generate_summary() {
 main() {
 	state_init
 
-	log_info "Starting log error parser module (scanning last $SCAN_DAYS days)..."
+	log_info "Starting log analyser module (scanning last $SCAN_DAYS days)..."
 
 	if ! logparser_init; then
 		log_error "Initialization failed"
@@ -367,7 +367,7 @@ main() {
 		log_info "  - dmesg (kernel messages)"
 		log_info "PLAN: deduplication enabled"
 		log_info "PLAN: output will be written to $OUTPUT_FILE"
-		state_mark_complete "98-log-error-parser"
+		state_mark_complete "98-log-analyser"
 		return 0
 	fi
 
@@ -392,9 +392,9 @@ main() {
 	fi
 
 	logparser_generate_summary
-	state_mark_complete "98-log-error-parser"
+	state_mark_complete "98-log-analyser"
 
-	log_info "Log error parser module completed successfully"
+	log_info "Log analyser module completed successfully"
 }
 
 main "$@"

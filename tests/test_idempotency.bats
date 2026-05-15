@@ -94,9 +94,9 @@ setup() {
     [ -r "$TOOLKIT_ROOT/templates/error-patterns.yaml" ]
 }
 
-@test "98-log-error-parser module has correct metadata" {
-    [ -f "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh" ]
-    grep -q '^# MODULE: 98-log-error-parser' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
-    grep -q '^# DEPENDS:$' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
-    grep -q '^# IDEMPOTENT: yes' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
+@test "98-log-analyser module has correct metadata" {
+    [ -f "$TOOLKIT_ROOT/scripts/98-log-analyser.sh" ]
+    grep -q '^# MODULE: 98-log-analyser' "$TOOLKIT_ROOT/scripts/98-log-analyser.sh"
+    grep -q '^# DEPENDS:$' "$TOOLKIT_ROOT/scripts/98-log-analyser.sh"
+    grep -q '^# IDEMPOTENT: yes' "$TOOLKIT_ROOT/scripts/98-log-analyser.sh"
 }
