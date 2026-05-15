@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - When VERSION is unchanged: Recommends [Unreleased] section
   - Eliminates false positive bot recommendations on version-bumped PRs
 
+- **Auto-Detect Network Interface**
+  - Network interface name now auto-detected and shown as default
+  - Automatically finds first active interface (excluding loopback)
+  - Falls back to common names (eth0, enp0s3, ens3) if detection fails
+  - Much better UX: users see their actual interface instead of generic "ens3"
+  - Works seamlessly across different environments (VMs, bare metal, cloud)
+
 - **Service Verification Check in Cleanup Module**
   - Fixed systemctl service unit verification that was unreliable
   - `systemctl list-unit-files` doesn't reliably indicate unit existence
