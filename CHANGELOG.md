@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
+## 1.1.9 – 2026-05-15
+
+### Changed
+- **Default Locale**: Changed system locale default from `en_US.UTF-8` to `nl_NL.UTF-8` (Dutch/Netherlands)
+  - Updated questionnaire default prompt
+  - Updated config defaults and example file
+  - Supports Dutch system language and locale settings
+
+### Fixed
+- **Network Interface Detection**: Improved `detect_network_interface()` to handle any naming scheme
+  - Replaced hardcoded interface name checks with dynamic /sys/class/net/ scanning
+  - Now correctly detects interfaces like `ens32`, `ens64`, or custom naming schemes
+  - Maintains backward compatibility with fallback to `ens3`
+  - Fixes UX issue where non-standard interface names were ignored
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
