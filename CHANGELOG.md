@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Cascade Deselect for Module Dependencies**
+  - When a user disables a module that other modules depend on, those
+    dependent modules are automatically deselected
+  - Prevents invalid module combinations where selected modules have
+    unmet dependencies
+  - Each cascaded deselection is logged with explanation
+  - Recursive: if module A depends on B, and B depends on C, disabling C
+    also disables B and A
+
 ### Fixed
 - **Module Selection Menu Display Bug**
   - Fixed main menu not waiting for user input and closing immediately
