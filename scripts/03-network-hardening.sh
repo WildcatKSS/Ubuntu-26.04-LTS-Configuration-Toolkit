@@ -16,8 +16,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Disable cloud-init
 if plan_action "disable cloud-init"; then
     if [ ! -f /etc/cloud/cloud-init.disabled ]; then
@@ -79,25 +77,29 @@ fi
 
 # 5. Disable IPv6 (sysctl + grub + netplan)
 if plan_action "persistently disable IPv6"; then
-    cat >/etc/sysctl.d/99-ipv6.conf <<'EOF'
+    system_write_file "$TOOLKIT_SYSCTL_DIR/99-ipv6.conf" 0644 <<'EOF'
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
-    run_quiet sysctl -p /etc/sysctl.d/99-ipv6.conf
+    run_quiet sysctl -p "$TOOLKIT_SYSCTL_DIR/99-ipv6.conf"
     log_info "IPv6 disabled via sysctl"
 
     # Disable IPv6 in netplan for systemd-networkd
-    if [ -d /etc/netplan ]; then
-        for nf in /etc/netplan/*.yaml /etc/netplan/*.yml; do
+    netplan_changed=0
+    if [ -d "$TOOLKIT_NETPLAN_DIR" ]; then
+        for nf in "$TOOLKIT_NETPLAN_DIR"/*.yaml "$TOOLKIT_NETPLAN_DIR"/*.yml; do
             if [ -f "$nf" ]; then
                 if ! grep -q 'ipv6-privacy:' "$nf"; then
                     sed -i '/^[[:space:]]*dhcp/a\            ipv6: false' "$nf" 2>/dev/null || true
                     log_info "Disabled IPv6 in netplan: $nf"
+                    netplan_changed=1
                 fi
             fi
         done
-        run_quiet netplan apply || log_warn "netplan apply failed (non-fatal)"
+        if [ "$netplan_changed" -eq 1 ]; then
+            run_quiet netplan apply || log_warn "netplan apply failed (non-fatal)"
+        fi
     fi
 
     if [ -f /etc/default/grub ]; then
