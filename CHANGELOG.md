@@ -34,6 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Supports: ssh (22/tcp), postfix (25/tcp), dovecot (143/tcp)
   - Eliminates UFW rules for non-installed services
 
+- **Improved IPv6 Disabling**: Enhanced multi-level IPv6 disabling
+  - Added netplan configuration to disable IPv6 at network stack level
+  - Kernel sysctl: disable_ipv6 parameters
+  - Network config: ipv6: false in netplan
+  - Boot parameters: ipv6.disable=1 in grub
+  - Runs netplan apply for immediate effect
+  - Ensures IPv6 is fully disabled despite different boot/network stacks
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
