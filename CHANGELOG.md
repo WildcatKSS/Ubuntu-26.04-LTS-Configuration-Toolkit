@@ -49,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Jails now available: sshd, postfix-sasl, postfix-ratelimit, dovecot, recidive
   - Mirrors intelligent service detection used for UFW firewall rules
 
+- **Service Detection Optimization**: Added shared `system_get_active_services()` helper
+  - Centralizes service scanning logic for UFW and fail2ban
+  - Eliminates duplicate systemctl checks
+  - Single source of truth for active service detection
+  - Better performance and maintainability
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
