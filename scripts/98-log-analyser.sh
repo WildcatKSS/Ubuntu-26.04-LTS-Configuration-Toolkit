@@ -15,6 +15,11 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
+# SECURITY NOTE: This module scans system logs which may contain sensitive data
+# including failed authentication attempts, API tokens, and SSL/TLS key material.
+# The report file is restricted to root and syslog group (chmod 0640).
+# Keep the error-report.json file secure and do not transmit over untrusted networks.
+
 OUTPUT_DIR="${TOOLKIT_PERSISTENT_DIR:-.}"
 OUTPUT_FILE="$OUTPUT_DIR/error-report.json"
 PATTERNS_FILE="$TOOLKIT_ROOT/templates/error-patterns.yaml"
@@ -180,6 +185,7 @@ logparser_escape_json_string() {
 	s="${s//$'\n'/\\n}"
 	s="${s//$'\r'/\\r}"
 	s="${s//$'\t'/\\t}"
+	s="${s//[[:cntrl:]]/}"
 	echo "$s"
 }
 
@@ -364,7 +370,7 @@ logparser_write_json_report() {
 	} > "$tmp_file"
 
 	if mv "$tmp_file" "$OUTPUT_FILE" 2>/dev/null; then
-		chmod 0644 "$OUTPUT_FILE"
+		chmod 0640 "$OUTPUT_FILE"
 		log_info "Error report written to $OUTPUT_FILE"
 	else
 		log_error "Failed to write error report to $OUTPUT_FILE"
