@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.1.8 – 2026-05-15
 
+### Changed
+- **Debug Level Question Moved to Beginning**
+  - Debug level is now Section 0 (first question) in interactive setup
+  - Default changed from `info` to `debug` for better initial feedback
+  - All subsequent logging reflects the chosen debug level from the start
+  - Improves troubleshooting experience by having full debug output available
+
 ### Fixed
 - **Module Dependency DAG Optimization**
   - Fixed overly restrictive linear dependency chain where each module depended on the previous one
