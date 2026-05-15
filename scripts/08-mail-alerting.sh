@@ -38,14 +38,24 @@ if plan_action "render $template -> $TOOLKIT_POSTFIX_MAIN_CF"; then
     if [ "$install_result" -eq 0 ]; then
         run_quiet systemctl restart postfix || log_warn "postfix restart failed"
     fi
+
+    # Ensure resolv.conf in chroot has correct ownership before starting postfix
+    # Remove stale copy with wrong permissions so postfix creates a fresh one
+    if [ -f /var/spool/postfix/etc/resolv.conf ]; then
+        # Check if owned by wrong user and remove it
+        owner=$(stat -c '%U' /var/spool/postfix/etc/resolv.conf 2>/dev/null || echo "")
+        if [ "$owner" != "root" ]; then
+            rm -f /var/spool/postfix/etc/resolv.conf
+            log_info "Removed stale /var/spool/postfix/etc/resolv.conf with wrong owner ($owner)"
+        fi
+    fi
+
     system_service_enable_start postfix || true
 
-    # Fix postfix chroot jail resolv.conf ownership (must run after postfix starts)
-    # postfix creates this file when started, so we fix permissions after startup
+    # Fix ownership if file was just created (in case it still has wrong permissions)
     if [ -f /var/spool/postfix/etc/resolv.conf ]; then
         chown root:root /var/spool/postfix/etc/resolv.conf 2>/dev/null || true
         chmod 0644 /var/spool/postfix/etc/resolv.conf 2>/dev/null || true
-        log_info "Fixed ownership of /var/spool/postfix/etc/resolv.conf"
     fi
 fi
 
