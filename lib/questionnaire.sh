@@ -369,16 +369,15 @@ questionnaire_ask_modules() {
 
     while true; do
         echo "Huidige selectie:"
-        echo
         index=0
         for short in "${module_list[@]}"; do
             local checkbox="[ ]"
             [ "${QUESTIONNAIRE_SELECTED[$short]:-0}" = "1" ] && checkbox="[x]"
-            printf '%d) %s %s\n' "$index" "$checkbox" "$short"
-            printf '   %s\n' "${MODULE_DESC[$short]:-}"
             local deps="${MODULE_DEPENDS[$short]:-}"
             if [ -n "$deps" ]; then
-                printf '   Vereist: %s\n' "$deps"
+                printf '%d) %s %-25s (vereist: %s)\n' "$index" "$checkbox" "$short" "$deps"
+            else
+                printf '%d) %s %s\n' "$index" "$checkbox" "$short"
             fi
             index=$((index + 1))
         done
