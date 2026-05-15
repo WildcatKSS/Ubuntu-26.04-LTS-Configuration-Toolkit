@@ -14,10 +14,9 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would run apt autoremove + clean and verify service status"
-else
+if plan_action "run apt autoremove + clean and verify service status"; then
     log_info "Running apt autoremove + clean"
     run_quiet apt-get autoremove -y
     run_quiet apt-get clean

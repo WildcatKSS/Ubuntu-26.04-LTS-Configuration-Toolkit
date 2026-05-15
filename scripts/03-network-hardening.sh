@@ -15,13 +15,14 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # 1. Disable cloud-init
 if plan_action "disable cloud-init"; then
-    if [ ! -f /etc/cloud/cloud-init.disabled ]; then
-        mkdir -p /etc/cloud
-        touch /etc/cloud/cloud-init.disabled
-        log_info "Created /etc/cloud/cloud-init.disabled"
+    if [ ! -f "$TOOLKIT_CLOUD_INIT_DISABLE" ]; then
+        mkdir -p "$(dirname "$TOOLKIT_CLOUD_INIT_DISABLE")"
+        touch "$TOOLKIT_CLOUD_INIT_DISABLE"
+        log_info "Created $TOOLKIT_CLOUD_INIT_DISABLE"
     fi
     for svc in cloud-init cloud-config cloud-final cloud-init-local; do
         if run_quiet systemctl list-unit-files "${svc}.service" \
@@ -90,13 +91,14 @@ EOF
     if [ -d "$TOOLKIT_NETPLAN_DIR" ]; then
         for nf in "$TOOLKIT_NETPLAN_DIR"/*.yaml "$TOOLKIT_NETPLAN_DIR"/*.yml; do
             if [ -f "$nf" ]; then
-                if ! grep -q 'ipv6-privacy:' "$nf"; then
+                if ! grep -q 'ipv6: false' "$nf"; then
                     sed -i '/^[[:space:]]*dhcp/a\            ipv6: false' "$nf" 2>/dev/null || true
                     log_info "Disabled IPv6 in netplan: $nf"
                     netplan_changed=1
                 fi
             fi
         done
+        # Only run netplan apply if files were actually changed
         if [ "$netplan_changed" -eq 1 ]; then
             run_quiet netplan apply || log_warn "netplan apply failed (non-fatal)"
         fi

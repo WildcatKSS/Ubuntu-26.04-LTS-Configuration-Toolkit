@@ -14,11 +14,10 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # 1. Timezone
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would set timezone to $TIMEZONE"
-else
+if plan_action "set timezone to $TIMEZONE"; then
     current_tz="$(run_quiet timedatectl show --value -p Timezone || echo unknown)"
     if [ "$current_tz" = "$TIMEZONE" ]; then
         log_info "Timezone already set: $TIMEZONE"
@@ -29,9 +28,7 @@ else
 fi
 
 # 2. Locale
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would generate locale $LOCALE and set as default"
-else
+if plan_action "generate locale $LOCALE and set as default"; then
     if run_quiet locale -a | grep -qi "^${LOCALE//-/}$\|^${LOCALE}$"; then
         log_info "Locale already generated: $LOCALE"
     else
@@ -46,9 +43,7 @@ else
 fi
 
 # 3. NTP via chrony
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would mask systemd-timesyncd, install chrony, configure NTP servers"
-else
+if plan_action "mask systemd-timesyncd, install chrony, configure NTP servers"; then
     system_service_mask systemd-timesyncd
     pkg_install chrony
 

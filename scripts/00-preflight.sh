@@ -14,6 +14,7 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 errors=0
 plan_warnings=0

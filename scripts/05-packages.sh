@@ -14,12 +14,12 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # Install standard package groups
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install editor, monitoring, and network packages"
-else
-    pkg_install vim nano htop iotop sysstat rsyslog logrotate \
+if plan_action "install editor, monitoring, and network packages"; then
+    pkg_install \
+        vim nano htop iotop sysstat rsyslog logrotate \
         iproute2 iputils-ping traceroute curl wget tree unzip zip tar \
         gnupg ca-certificates
 fi

@@ -14,14 +14,13 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # 1. Kernel sysctl hardening
 template="$TOOLKIT_ROOT/templates/sysctl-hardening.conf"
-target="/etc/sysctl.d/99-hardening.conf"
+target="$TOOLKIT_SYSCTL_DIR/99-hardening.conf"
 
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install $template -> $target and run sysctl --system"
-else
+if plan_action "install $template -> $target and run sysctl --system"; then
     if system_file_install "$template" "$target" 0644; then
         run_quiet sysctl --system
         log_info "Applied kernel hardening sysctls"
@@ -29,9 +28,7 @@ else
 fi
 
 # 2. AppArmor verification
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would verify AppArmor is enabled and report profile counts"
-else
+if plan_action "verify AppArmor is enabled and report profile counts"; then
     pkg_install apparmor apparmor-utils
     if run_quiet aa-status --enabled; then
         enforced="$(run_quiet aa-status | awk '/profiles are in enforce mode/{print $1; exit}')"
@@ -45,9 +42,7 @@ else
 fi
 
 # 3. auditd
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install auditd and load custom rules"
-else
+if plan_action "install auditd and load custom rules"; then
     pkg_install auditd audispd-plugins
     rules_template="$TOOLKIT_ROOT/templates/auditd.rules"
     rules_target="/etc/audit/rules.d/99-toolkit.rules"

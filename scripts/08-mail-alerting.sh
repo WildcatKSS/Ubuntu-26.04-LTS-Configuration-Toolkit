@@ -15,6 +15,7 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # Pre-seed postfix to avoid debconf prompts
 if plan_action "pre-seed postfix and install postfix/mailutils"; then
@@ -36,12 +37,11 @@ if plan_action "fix postfix chroot jail /etc/resolv.conf ownership"; then
 fi
 
 # 1. Postfix main.cf from template
-target="$TOOLKIT_POSTFIX_MAIN_CF"
 template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
-if plan_action "render $template -> $target"; then
+if plan_action "render $template -> $TOOLKIT_POSTFIX_MAIN_CF"; then
     MAIL_DOMAIN="${HOSTNAME#*.}"
     export HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT
-    if system_install_from_template "$template" "$target" "HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT" 0644; then
+    if system_install_from_template "$template" "$TOOLKIT_POSTFIX_MAIN_CF" "HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT" 0644; then
         run_quiet systemctl restart postfix || log_warn "postfix restart failed"
     fi
     system_service_enable_start postfix || true

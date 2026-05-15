@@ -14,11 +14,10 @@ set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
+# PLAN_MODE is exported by main.sh, no need to redeclare
 
 # 1. sysstat
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would enable sysstat collection"
-else
+if plan_action "enable sysstat collection"; then
     pkg_install sysstat
     if [ -f /etc/default/sysstat ]; then
         if grep -q '^ENABLED="true"' /etc/default/sysstat; then
@@ -32,9 +31,7 @@ else
 fi
 
 # 2. rsyslog custom rules
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install custom rsyslog rules"
-else
+if plan_action "install custom rsyslog rules"; then
     pkg_install rsyslog
     template="$TOOLKIT_ROOT/templates/rsyslog-custom.conf"
     target="/etc/rsyslog.d/99-custom.conf"
@@ -44,9 +41,7 @@ else
 fi
 
 # 3. logrotate
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would install logrotate policy /etc/logrotate.d/custom"
-else
+if plan_action "install logrotate policy /etc/logrotate.d/custom"; then
     pkg_install logrotate
     template="$TOOLKIT_ROOT/templates/logrotate-custom"
     target="/etc/logrotate.d/custom"
