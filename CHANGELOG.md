@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
+- **Version Check Bot Intelligence**
+  - Fixed CI bot to intelligently handle CHANGELOG updates
+  - When VERSION is updated: Checks for new version section (no [Unreleased] needed)
+  - When VERSION is unchanged: Recommends [Unreleased] section
+  - Eliminates false positive bot recommendations on version-bumped PRs
+
 - **Service Verification Check in Cleanup Module**
   - Fixed systemctl service unit verification that was unreliable
   - `systemctl list-unit-files` doesn't reliably indicate unit existence
