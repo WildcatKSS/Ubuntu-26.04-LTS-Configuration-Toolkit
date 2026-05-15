@@ -38,6 +38,7 @@ Execution control:
   --ignore-errors       Continue when a non-critical module exits non-zero.
   --test                Run end-to-end idempotency validation (CI/CD mode).
   -h, --help            Show this help and exit.
+  -v, --version         Show version and exit.
 ```
 
 ### Flag conflict resolution
