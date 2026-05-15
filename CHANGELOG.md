@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.2.0 – 2026-05-15
 
+### Fixed
+- **Critical Bug**: `system_service_is_masked()` in lib/system.sh now properly captures parameter `$1` as `local svc`
+  - Function was referencing undefined variable `$svc`, would fail if invoked
+  - Bug caught by comprehensive code review (currently unused, but fixed for future use)
+
+### Optimized
+- **Service Scanning**: Consolidated duplicate service detection in scripts/03-network-hardening.sh
+  - SERVICE_RULES and SERVICE_JAILS moved outside if blocks to module scope
+  - Service scanning now happens once (line 69) instead of twice
+  - Reused `active_services` array for both UFW and fail2ban configuration
+  - Eliminates 2+ redundant systemctl calls per run
+
 ### Added
 - **Comprehensive Helper Library**: New functions in `lib/system.sh`
   - `system_install_from_template()`: Render + compare + install (consolidates duplicate pattern)
