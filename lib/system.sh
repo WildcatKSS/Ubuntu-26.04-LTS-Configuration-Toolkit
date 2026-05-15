@@ -113,3 +113,105 @@ system_get_active_services() {
 
     echo "${active_list[@]}"
 }
+
+# system_service_is_loaded <service>
+# Checks if a service unit file is loaded (exists and can be managed by systemd)
+system_service_is_loaded() {
+    local svc="$1"
+    systemctl show -p LoadState --value "$svc" 2>/dev/null | grep -q "^loaded"
+}
+
+# system_service_is_masked <service>
+# Checks if a service is masked (disabled from starting)
+system_service_is_masked() {
+    systemctl is-enabled "$svc" 2>/dev/null | grep -q masked
+}
+
+# system_backup_file <path>
+# Creates idempotent backup of a file with .toolkit.bak extension
+# Only backs up if backup doesn't already exist
+system_backup_file() {
+    local src="$1"
+    if [ -f "$src" ] && [ ! -f "${src}.toolkit.bak" ]; then
+        cp "$src" "${src}.toolkit.bak"
+        log_info "Backed up: ${src}.toolkit.bak"
+    fi
+}
+
+# system_restore_file <path>
+# Restores a file from its .toolkit.bak backup
+system_restore_file() {
+    local dst="$1"
+    if [ -f "${dst}.toolkit.bak" ]; then
+        cp "${dst}.toolkit.bak" "$dst"
+        log_info "Restored from backup: $dst"
+    fi
+}
+
+# system_install_from_template <template> <target> <env_vars> [mode]
+# Render template with envsubst, compare, install idempotently
+# Usage: system_install_from_template "$template" "$target" "VAR1 VAR2" 0644
+system_install_from_template() {
+    local template="$1"
+    local target="$2"
+    local env_vars="${3:-}"
+    local mode="${4:-0644}"
+    local tmp
+
+    if [ ! -f "$template" ]; then
+        log_error "Template missing: $template"
+        return 1
+    fi
+
+    tmp="$(mktemp)"
+    if [ -n "$env_vars" ]; then
+        # shellcheck disable=SC2086
+        envsubst "$env_vars" < "$template" > "$tmp"
+    else
+        cat "$template" > "$tmp"
+    fi
+
+    if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
+        log_info "File unchanged: $target"
+        rm -f "$tmp"
+        return 0
+    fi
+
+    system_backup_file "$target"
+    install -m "$mode" "$tmp" "$target"
+    rm -f "$tmp"
+    log_info "Installed: $target (mode $mode)"
+}
+
+# system_write_file <target> <mode> [heredoc_stdin]
+# Write stdin to file idempotently (with heredoc support)
+# Usage: system_write_file /etc/file 0644 <<'EOF'
+#        content here
+#        EOF
+system_write_file() {
+    local target="$1"
+    local mode="${2:-0644}"
+    local tmp
+
+    tmp="$(mktemp)"
+    cat > "$tmp"
+
+    if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
+        log_info "File unchanged: $target"
+        rm -f "$tmp"
+        return 0
+    fi
+
+    system_backup_file "$target"
+    install -m "$mode" "$tmp" "$target"
+    rm -f "$tmp"
+    log_info "Wrote: $target (mode $mode)"
+}
+
+# system_verify_ubuntu_26
+# Verifies system is Ubuntu Server 26.04 LTS
+system_verify_ubuntu_26() {
+    [ -f /etc/os-release ] || return 1
+    grep -q 'VERSION_ID="26\.04"' /etc/os-release && \
+        grep -q '^ID=ubuntu' /etc/os-release
+}

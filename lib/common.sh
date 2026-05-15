@@ -24,3 +24,12 @@ source "$_lib_dir/state.sh"
 source "$_lib_dir/plan.sh"
 
 unset _lib_dir
+
+# Configuration path constants
+export TOOLKIT_CLOUD_INIT_DISABLE="/etc/cloud/cloud-init.disabled"
+export TOOLKIT_SYSCTL_DIR="/etc/sysctl.d"
+export TOOLKIT_NETPLAN_DIR="/etc/netplan"
+export TOOLKIT_FAIL2BAN_JAIL="/etc/fail2ban/jail.local"
+export TOOLKIT_APT_UPGRADES="/etc/apt/apt.conf.d/20auto-upgrades"
+export TOOLKIT_CHRONY_CONF="/etc/chrony/chrony.conf"
+export TOOLKIT_POSTFIX_MAIN_CF="/etc/postfix/main.cf"
