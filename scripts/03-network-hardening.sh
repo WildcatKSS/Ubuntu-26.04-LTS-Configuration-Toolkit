@@ -82,12 +82,17 @@ fi
 
 # 5. Disable IPv6 (sysctl + grub + netplan)
 if plan_action "persistently disable IPv6"; then
+    sysctl_result=0
     system_write_file "$TOOLKIT_SYSCTL_DIR/99-ipv6.conf" 0644 <<'EOF'
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
-    run_quiet sysctl -p "$TOOLKIT_SYSCTL_DIR/99-ipv6.conf"
+    sysctl_result=$?
+    # Only apply sysctl if file actually changed (return 0), not if unchanged (return 2)
+    if [ "$sysctl_result" -eq 0 ]; then
+        run_quiet sysctl -p "$TOOLKIT_SYSCTL_DIR/99-ipv6.conf"
+    fi
     log_info "IPv6 disabled via sysctl"
 
     # Disable IPv6 in netplan for systemd-networkd

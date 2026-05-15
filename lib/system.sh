@@ -156,6 +156,7 @@ system_restore_file() {
 #   target: Destination file path
 #   env_vars: Space-separated var names for envsubst (e.g., "VAR1 VAR2"). Use "" for no substitution.
 #   mode: File permission mode (default: 0644)
+# Returns: 0 if installed/unchanged, 1 on error, 2 if file was already up-to-date (no change)
 # Usage:
 #   system_install_from_template "$template" "$target" "HOSTNAME DOMAIN" 0644
 #   system_install_from_template "$template" "$target" "" 0644  # No substitution
@@ -165,6 +166,7 @@ system_install_from_template() {
     local env_vars="${3:-}"
     local mode="${4:-0644}"
     local tmp
+    local vars_with_dollar
 
     if [ ! -f "$template" ]; then
         log_error "Template missing: $template"
@@ -173,9 +175,15 @@ system_install_from_template() {
 
     tmp="$(mktemp)"
     if [ -n "$env_vars" ]; then
-        # Expand only specified variables (SC2086 is necessary for this pattern)
+        # envsubst requires variable names with $ prefix (e.g., "$VAR1 $VAR2")
+        # Prepend $ to each variable name
+        vars_with_dollar=""
+        local var
+        for var in $env_vars; do
+            vars_with_dollar="${vars_with_dollar:+$vars_with_dollar }$"$var
+        done
         # shellcheck disable=SC2086
-        envsubst "$env_vars" < "$template" > "$tmp"
+        envsubst "$vars_with_dollar" < "$template" > "$tmp"
     else
         cat "$template" > "$tmp"
     fi
@@ -183,17 +191,19 @@ system_install_from_template() {
     if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
         log_info "File unchanged: $target"
         rm -f "$tmp"
-        return 0
+        return 2
     fi
 
     system_backup_file "$target"
     install -m "$mode" "$tmp" "$target"
     rm -f "$tmp"
     log_info "Installed: $target (mode $mode)"
+    return 0
 }
 
 # system_write_file <target> <mode> [heredoc_stdin]
 # Write stdin to file idempotently (with heredoc support)
+# Returns: 0 if installed/changed, 1 on error, 2 if file was already up-to-date (no change)
 # Usage: system_write_file /etc/file 0644 <<'EOF'
 #        content here
 #        EOF
@@ -208,13 +218,14 @@ system_write_file() {
     if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
         log_info "File unchanged: $target"
         rm -f "$tmp"
-        return 0
+        return 2
     fi
 
     system_backup_file "$target"
     install -m "$mode" "$tmp" "$target"
     rm -f "$tmp"
     log_info "Wrote: $target (mode $mode)"
+    return 0
 }
 
 # system_verify_ubuntu_26

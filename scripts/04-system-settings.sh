@@ -50,6 +50,7 @@ if plan_action "mask systemd-timesyncd, install chrony, configure NTP servers"; 
     chrony_conf="$TOOLKIT_CHRONY_CONF"
     [ -f "$chrony_conf" ] || chrony_conf="/etc/chrony.conf"
 
+    write_result=0
     {
         echo "# Managed by ubuntu-26-toolkit"
         for srv in "${NTP_SERVERS[@]}"; do
@@ -65,10 +66,13 @@ rtcsync
 keyfile /etc/chrony/chrony.keys
 logdir /var/log/chrony
 EOF
-    } | system_write_file "$chrony_conf" 0644
+    } | system_write_file "$chrony_conf" 0644 || write_result=$?
 
-    run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
-        || log_warn "chrony restart failed"
+    # Only restart if config actually changed (return 0), not if unchanged (return 2)
+    if [ "$write_result" -eq 0 ]; then
+        run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
+            || log_warn "chrony restart failed"
+    fi
     system_service_enable_start chrony || system_service_enable_start chronyd || true
 
     if command -v chronyc >/dev/null 2>&1; then

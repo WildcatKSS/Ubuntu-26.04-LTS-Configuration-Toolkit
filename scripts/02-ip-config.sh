@@ -74,7 +74,11 @@ else
 fi
 
 if plan_action "render $template -> $target and run netplan apply"; then
-    if system_install_from_template "$template" "$target" "NETWORK_INTERFACE IP_ADDRESS PREFIX_LENGTH GATEWAY DNS_SERVERS_YAML" 0600; then
+    install_result=0
+    system_install_from_template "$template" "$target" "NETWORK_INTERFACE IP_ADDRESS PREFIX_LENGTH GATEWAY DNS_SERVERS_YAML" 0600 || install_result=$?
+
+    # Only apply netplan if file actually changed (return 0), not if unchanged (return 2)
+    if [ "$install_result" -eq 0 ]; then
         # 5. Apply with auto-restore on connectivity failure
         if ! run_quiet netplan apply; then
             log_error "netplan apply failed — restoring backup"

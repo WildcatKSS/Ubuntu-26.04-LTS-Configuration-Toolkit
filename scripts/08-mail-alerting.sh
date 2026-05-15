@@ -41,7 +41,10 @@ template="$TOOLKIT_ROOT/templates/postfix-relay.conf"
 if plan_action "render $template -> $TOOLKIT_POSTFIX_MAIN_CF"; then
     MAIL_DOMAIN="${HOSTNAME#*.}"
     export HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT
-    if system_install_from_template "$template" "$TOOLKIT_POSTFIX_MAIN_CF" "HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT" 0644; then
+    install_result=0
+    system_install_from_template "$template" "$TOOLKIT_POSTFIX_MAIN_CF" "HOSTNAME MAIL_DOMAIN SMTP_RELAY_HOST SMTP_RELAY_PORT" 0644 || install_result=$?
+    # Only restart if config actually changed (return 0), not if unchanged (return 2)
+    if [ "$install_result" -eq 0 ]; then
         run_quiet systemctl restart postfix || log_warn "postfix restart failed"
     fi
     system_service_enable_start postfix || true
