@@ -16,8 +16,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Hostname
 if plan_action "set hostname to $HOSTNAME"; then
     if [ "$(run_quiet hostname)" = "$HOSTNAME" ]; then
@@ -75,18 +73,7 @@ else
 fi
 
 if plan_action "render $template -> $target and run netplan apply"; then
-    tmp="$(mktemp)"
-    envsubst < "$template" > "$tmp"
-    chmod 0600 "$tmp"
-
-    if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
-        log_info "Netplan config unchanged — skipping apply"
-        rm -f "$tmp"
-    else
-        install -m 0600 "$tmp" "$target"
-        rm -f "$tmp"
-        log_info "Wrote $target"
-
+    if system_install_from_template "$template" "$target" "NETWORK_INTERFACE IP_ADDRESS PREFIX_LENGTH GATEWAY DNS_SERVERS_YAML" 0600; then
         # 5. Apply with auto-restore on connectivity failure
         if ! run_quiet netplan apply; then
             log_error "netplan apply failed — restoring backup"
