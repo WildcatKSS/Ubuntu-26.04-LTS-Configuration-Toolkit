@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Applied to package management functions (`pkg_install`, `pkg_purge`, `pkg_update`)
 
 ### Changed
+- **DHCP Now Default Network Configuration**
+  - `USE_DHCP` default changed from `false` to `true`
+  - Interactive setup now defaults to DHCP for network configuration
+  - More suitable for cloud and automated deployment environments
+  - Static IP still available as an option during setup
+
 - **Debug Level Now Default for All Operations**
   - Removed debug level question from interactive setup (no longer user-configurable)
   - `TOOLKIT_LOG_LEVEL` default changed from `info` to `debug` globally
