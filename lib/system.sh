@@ -151,7 +151,14 @@ system_restore_file() {
 
 # system_install_from_template <template> <target> <env_vars> [mode]
 # Render template with envsubst, compare, install idempotently
-# Usage: system_install_from_template "$template" "$target" "VAR1 VAR2" 0644
+# Args:
+#   template: Source template file path
+#   target: Destination file path
+#   env_vars: Space-separated var names for envsubst (e.g., "VAR1 VAR2"). Use "" for no substitution.
+#   mode: File permission mode (default: 0644)
+# Usage:
+#   system_install_from_template "$template" "$target" "HOSTNAME DOMAIN" 0644
+#   system_install_from_template "$template" "$target" "" 0644  # No substitution
 system_install_from_template() {
     local template="$1"
     local target="$2"
@@ -166,6 +173,7 @@ system_install_from_template() {
 
     tmp="$(mktemp)"
     if [ -n "$env_vars" ]; then
+        # Expand only specified variables (SC2086 is necessary for this pattern)
         # shellcheck disable=SC2086
         envsubst "$env_vars" < "$template" > "$tmp"
     else
