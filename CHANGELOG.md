@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides clear feedback that cleanup operation succeeded
   - Improves user visibility into module progress
 
+- **Duplicate Completion Summary**
+  - Removed duplicate module list from 99-cleanup module output
+  - Final summary is now only shown once by main.sh at the end
+  - Eliminates redundant output and cleaner final display
+
 ## 1.1.8 – 2026-05-15
 
 ### Changed
