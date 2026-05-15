@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.1.8 – 2026-05-15
 
+### Changed
+- **Project Language Changed to English**
+  - All interactive prompts and user-facing messages translated from Dutch to English
+  - Interactive setup questionnaire now fully in English
+  - Module selection menu and feedback messages in English
+  - Configuration creation messages in English
+  - Default system locale changed from `nl_NL.UTF-8` to `en_US.UTF-8`
+  - Better support for international users and global deployments
+
 ### Added
 - **Silent Command Execution Helper**
   - New `run_quiet()` function in `lib/log.sh` for executing commands without terminal output
