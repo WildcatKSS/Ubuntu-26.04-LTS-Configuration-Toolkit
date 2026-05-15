@@ -15,13 +15,11 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 source "$TOOLKIT_ROOT/lib/common.sh"
 PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
-# Configuration
 OUTPUT_DIR="${TOOLKIT_PERSISTENT_DIR:-.}"
 OUTPUT_FILE="$OUTPUT_DIR/error-report.json"
 PATTERNS_FILE="$TOOLKIT_ROOT/templates/error-patterns.yaml"
 SCAN_DAYS=7
 
-# Temp files for aggregating scan results
 declare -a TEMP_FILES=()
 
 logparser_cleanup() {
@@ -54,8 +52,6 @@ logparser_scan_journalctl() {
 		return 0
 	fi
 
-	log_info "Scanning journalctl (last $SCAN_DAYS days)..."
-
 	if ! command -v journalctl &>/dev/null; then
 		log_warn "journalctl not available; skipping systemd logs"
 		return 0
@@ -71,15 +67,11 @@ logparser_scan_journalctl() {
 
 logparser_scan_file_logs() {
 	local output_file="$1"
-	local cutoff_epoch
 
 	if [ "$PLAN_MODE" = "1" ]; then
 		log_info "PLAN: would scan /var/log/*.log files (last $SCAN_DAYS days)"
 		return 0
 	fi
-
-	log_info "Scanning /var/log files (last $SCAN_DAYS days)..."
-	cutoff_epoch=$(date -d "$SCAN_DAYS days ago" +%s 2>/dev/null || echo 0)
 
 	find /var/log -maxdepth 2 -name "*.log" -type f 2>/dev/null | head -50 | while read -r logfile; do
 		[ -r "$logfile" ] || continue
@@ -94,8 +86,6 @@ logparser_scan_file_logs() {
 			done || true
 		fi
 	done
-
-	log_info "File log scanning complete"
 }
 
 logparser_scan_dmesg() {
@@ -106,8 +96,6 @@ logparser_scan_dmesg() {
 		return 0
 	fi
 
-	log_info "Scanning dmesg..."
-
 	if ! command -v dmesg &>/dev/null; then
 		log_warn "dmesg not available; skipping kernel messages"
 		return 0
@@ -116,24 +104,6 @@ logparser_scan_dmesg() {
 	timeout 10s dmesg 2>/dev/null | while IFS= read -r line; do
 		[ -n "$line" ] && echo "dmesg|$line" >> "$output_file"
 	done || log_warn "dmesg scan failed"
-}
-
-logparser_parse_timestamp() {
-	local line="$1"
-	local source="$2"
-
-	case "$source" in
-		journalctl)
-			echo "$line" | grep -o '"__REALTIME_TIMESTAMP":"[^"]*"' | cut -d'"' -f4 | \
-				xargs -I {} date -d "@$(( {} / 1000000 ))" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo ""
-			;;
-		file|dmesg)
-			echo "$line" | grep -oE '^\[[0-9]+\.[0-9]+\]|^[A-Z][a-z]{2}\s+[0-9]{1,2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}' | head -1 || echo ""
-			;;
-		*)
-			echo ""
-			;;
-	esac
 }
 
 logparser_extract_severity() {
@@ -173,58 +143,78 @@ logparser_extract_message() {
 	esac
 }
 
-logparser_match_error_patterns() {
-	local message="$1"
-
-	[ -f "$PATTERNS_FILE" ] || return 0
-
-	while IFS= read -r line; do
-		if echo "$message" | grep -iE "$line" >/dev/null 2>&1; then
-			return 0
-		fi
-	done < <(grep -E '^\s+(regex|substring):' "$PATTERNS_FILE" 2>/dev/null | sed 's/.*:\s*"\([^"]*\)".*/\1/' || true)
-
-	return 1
+logparser_escape_json_string() {
+	local s="$1"
+	s="${s//\\/\\\\}"
+	s="${s//\"/\\\"}"
+	s="${s//$'\n'/\\n}"
+	s="${s//$'\r'/\\r}"
+	s="${s//$'\t'/\\t}"
+	echo "$s"
 }
 
-logparser_deduplicate_entries() {
-	local input_file="$1"
-	local output_file="$2"
-
-	if [ "$PLAN_MODE" = "1" ]; then
-		return 0
-	fi
-
-	log_info "Deduplicating entries..."
-
-	sort "$input_file" 2>/dev/null | uniq -c | sort -rn > "$output_file" || {
-		log_error "Deduplication failed"
-		return 1
-	}
-}
-
-logparser_build_json_entries() {
+logparser_deduplicate_and_parse() {
 	local raw_entries="$1"
+	local entries_json="$2"
 
 	if [ "$PLAN_MODE" = "1" ]; then
 		return 0
 	fi
 
-	local first=true
+	log_info "Processing log entries..."
+
+	local -A entry_map
 	local total_entries=0
 	local total_occurrences=0
-	local -A severity_counts
-	local -A source_counts
+
+	while IFS='|' read -r source rest; do
+		[ -z "$source" ] && continue
+
+		local severity message msg_key
+
+		case "$source" in
+			journalctl)
+				severity=$(logparser_extract_severity "$rest")
+				message=$(logparser_extract_message "$rest" "journalctl")
+				;;
+			file)
+				local logfile
+				IFS='|' read -r logfile msg_rest <<< "$rest"
+				severity=$(logparser_extract_severity "$msg_rest")
+				message=$(logparser_extract_message "$msg_rest" "file")
+				source="$logfile"
+				;;
+			dmesg)
+				severity=$(logparser_extract_severity "$rest")
+				message=$(logparser_extract_message "$rest" "dmesg")
+				;;
+			*)
+				continue
+				;;
+		esac
+
+		[ -z "$message" ] && continue
+
+		msg_key="$source|$severity|$message"
+
+		if [ -z "${entry_map[$msg_key]:-}" ]; then
+			entry_map["$msg_key"]=1
+			total_entries=$((total_entries + 1))
+		else
+			entry_map["$msg_key"]=$((entry_map["$msg_key"] + 1))
+		fi
+
+		total_occurrences=$((total_occurrences + 1))
+	done < "$raw_entries"
+
+	echo "$total_entries" > "$entries_json.metadata"
+	echo "$total_occurrences" >> "$entries_json.metadata"
 
 	{
-		echo "  \"entries\": ["
-
-		while IFS=' ' read -r count source rest; do
-			[ -z "$count" ] && continue
-
-			if [[ "$count" =~ ^[0-9]+$ ]]; then
-				total_occurrences=$((total_occurrences + count))
-			fi
+		local first=true
+		for key in "${!entry_map[@]}"; do
+			IFS='|' read -r source severity message <<< "$key"
+			local count="${entry_map[$key]}"
 
 			if [ "$first" = true ]; then
 				first=false
@@ -232,20 +222,22 @@ logparser_build_json_entries() {
 				echo ","
 			fi
 
+			local msg_escaped
+			msg_escaped=$(logparser_escape_json_string "$message")
+			local src_escaped
+			src_escaped=$(logparser_escape_json_string "$source")
+
 			echo -n "    {"
-			echo -n "\"count\": $count"
-			echo -n ", \"source\": \"$source\""
+			echo -n "\"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+			echo -n ", \"source\": \"$src_escaped\""
+			echo -n ", \"severity\": \"$severity\""
+			echo -n ", \"message\": \"$msg_escaped\""
+			echo -n ", \"occurrence_count\": $count"
+			echo -n ", \"matched_pattern\": null"
+			echo -n ", \"suggested_fixes\": []"
 			echo -n "}"
-
-			total_entries=$((total_entries + 1))
-		done < "$raw_entries"
-
-		echo ""
-		echo "  ]"
-	} > "$OUTPUT_FILE.entries"
-
-	echo "$total_entries" > "$OUTPUT_FILE.metadata"
-	echo "$total_occurrences" >> "$OUTPUT_FILE.metadata"
+		done
+	} > "$entries_json"
 }
 
 logparser_write_json_report() {
@@ -257,37 +249,51 @@ logparser_write_json_report() {
 	log_info "Generating JSON report..."
 
 	local tmp_file="$OUTPUT_FILE.tmp.$$"
-	local start_time
-	local end_time
-	local duration
+	local entries_json="$OUTPUT_FILE.entries.$$"
+	local metadata_file="$entries_json.metadata"
 
+	[ ! -f "$metadata_file" ] && {
+		echo "0" > "$metadata_file"
+		echo "0" >> "$metadata_file"
+	}
+
+	local total_unique
+	local total_occurrences
+	read total_unique < "$metadata_file"
+	read total_occurrences < "$metadata_file" || total_occurrences=0
+
+	local start_time
 	start_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-	end_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-	duration=0
 
 	{
 		echo "{"
 		echo "  \"report_timestamp\": \"$start_time\","
-		echo "  \"report_duration_seconds\": $duration,"
+		echo "  \"report_duration_seconds\": 0,"
 		echo "  \"scanned_range\": {"
 		echo "    \"since\": \"$(date -d "$SCAN_DAYS days ago" -u +%Y-%m-%dT%H:%M:%SZ)\","
-		echo "    \"until\": \"$end_time\""
+		echo "    \"until\": \"$start_time\""
 		echo "  },"
 		echo "  \"summary\": {"
-		echo "    \"total_unique_entries\": 0,"
-		echo "    \"total_occurrences\": 0,"
-		echo "    \"by_severity\": {},"
+		echo "    \"total_unique_entries\": $total_unique,"
+		echo "    \"total_occurrences\": $total_occurrences,"
+		echo "    \"by_severity\": {"
+		echo "      \"CRITICAL\": 0,"
+		echo "      \"ERROR\": 0,"
+		echo "      \"WARNING\": 0,"
+		echo "      \"INFO\": 0"
+		echo "    },"
 		echo "    \"by_source\": {},"
 		echo "    \"patterns_matched\": 0,"
 		echo "    \"patterns_list\": []"
 		echo "  },"
+		echo "  \"entries\": ["
 
-		if [ -f "$OUTPUT_FILE.entries" ]; then
-			cat "$OUTPUT_FILE.entries"
-		else
-			echo "  \"entries\": []"
+		if [ -f "$entries_json" ]; then
+			cat "$entries_json"
 		fi
 
+		echo ""
+		echo "  ]"
 		echo "}"
 	} > "$tmp_file"
 
@@ -298,6 +304,8 @@ logparser_write_json_report() {
 		log_error "Failed to write error report to $OUTPUT_FILE"
 		return 1
 	fi
+
+	rm -f "$entries_json" "$metadata_file"
 }
 
 logparser_generate_summary() {
@@ -306,7 +314,9 @@ logparser_generate_summary() {
 		return 0
 	fi
 
-	log_info "Log error parser module completed"
+	[ -f "$OUTPUT_FILE" ] && {
+		log_info "Log error parser module completed"
+	}
 }
 
 main() {
@@ -326,7 +336,7 @@ main() {
 		log_info "  - /var/log files"
 		log_info "  - dmesg (kernel messages)"
 		log_info "PLAN: deduplication enabled"
-		log_info "PLAN: output would be written to $OUTPUT_FILE"
+		log_info "PLAN: output will be written to $OUTPUT_FILE"
 		state_mark_complete "98-log-error-parser"
 		return 0
 	fi
@@ -340,18 +350,18 @@ main() {
 	logparser_scan_dmesg "$raw_scan_file"
 
 	if [ -f "$raw_scan_file" ] && [ -s "$raw_scan_file" ]; then
-		local deduplicated_file
-		deduplicated_file=$(mktemp)
-		TEMP_FILES+=("$deduplicated_file")
+		local entries_json
+		entries_json=$(mktemp)
+		TEMP_FILES+=("$entries_json")
 
-		if logparser_deduplicate_entries "$raw_scan_file" "$deduplicated_file"; then
-			logparser_build_json_entries "$deduplicated_file"
-		fi
+		logparser_deduplicate_and_parse "$raw_scan_file" "$entries_json"
+		logparser_write_json_report
+	else
+		log_warn "No log entries found to process"
+		logparser_write_json_report
 	fi
 
-	logparser_write_json_report
 	logparser_generate_summary
-
 	state_mark_complete "98-log-error-parser"
 
 	log_info "Log error parser module completed successfully"
