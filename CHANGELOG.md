@@ -12,11 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.1.8 – 2026-05-15
 
 ### Changed
-- **Debug Level Question Moved to Beginning**
-  - Debug level is now Section 0 (first question) in interactive setup
-  - Default changed from `info` to `debug` for better initial feedback
-  - All subsequent logging reflects the chosen debug level from the start
-  - Improves troubleshooting experience by having full debug output available
+- **Debug Level Now Default for All Operations**
+  - Removed debug level question from interactive setup (no longer user-configurable)
+  - `TOOLKIT_LOG_LEVEL` default changed from `info` to `debug` globally
+  - All scripts and processes run in debug mode by default
+  - Ensures comprehensive logging and debugging information is always available
+  - Simplifies setup flow by removing configuration question
 
 ### Fixed
 - **Module Dependency DAG Optimization**
