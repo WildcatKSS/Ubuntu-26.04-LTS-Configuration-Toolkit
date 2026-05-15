@@ -4,7 +4,7 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      98-log-analyser
-# SUMMARY:     Scan system logs (7d), analyze patterns, deduplicate, output JSON report
+# SUMMARY:     Scan system logs (24h), analyze patterns, deduplicate, output JSON report
 # DEPENDS:
 # IDEMPOTENT: yes
 # DESTRUCTIVE: no
@@ -30,7 +30,7 @@ PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 OUTPUT_DIR="${TOOLKIT_PERSISTENT_DIR:-.}"
 OUTPUT_FILE="$OUTPUT_DIR/error-report.json"
 PATTERNS_FILE="$TOOLKIT_ROOT/templates/error-patterns.yaml"
-SCAN_DAYS=7
+SCAN_DAYS=1
 
 declare -a TEMP_FILES=()
 
@@ -60,7 +60,7 @@ logparser_scan_journalctl() {
 	local output_file="$1"
 
 	if [ "$PLAN_MODE" = "1" ]; then
-		log_info "PLAN: would scan journalctl (last $SCAN_DAYS days, all priorities)"
+		log_info "PLAN: would scan journalctl (last 24 hours, all priorities)"
 		return 0
 	fi
 
@@ -69,7 +69,7 @@ logparser_scan_journalctl() {
 		return 0
 	fi
 
-	timeout 30s journalctl --since "$SCAN_DAYS days ago" -p debug..emerg --no-pager -o json 2>/dev/null | \
+	timeout 60s journalctl --since "$SCAN_DAYS days ago" -p debug..emerg --no-pager -o json 2>/dev/null | \
 		while IFS= read -r line; do
 			if [ -n "$line" ]; then
 				echo "journalctl|$line" >> "$output_file"
@@ -81,7 +81,7 @@ logparser_scan_file_logs() {
 	local output_file="$1"
 
 	if [ "$PLAN_MODE" = "1" ]; then
-		log_info "PLAN: would scan /var/log/*.log files (last $SCAN_DAYS days)"
+		log_info "PLAN: would scan /var/log/*.log files (last 24 hours)"
 		return 0
 	fi
 
@@ -89,11 +89,11 @@ logparser_scan_file_logs() {
 		[ -r "$logfile" ] || continue
 
 		if [[ "$logfile" =~ \.gz$ ]]; then
-			timeout 10s zcat "$logfile" 2>/dev/null | tail -c 5M 2>/dev/null | while IFS= read -r line; do
+			timeout 10s zcat "$logfile" 2>/dev/null | grep -iE 'error|warn|fail|crit|fatal|panic' | tail -200 2>/dev/null | while IFS= read -r line; do
 				[ -n "$line" ] && echo "file|$logfile|$line" >> "$output_file"
 			done || true
 		else
-			timeout 10s tail -c 5M "$logfile" 2>/dev/null | while IFS= read -r line; do
+			timeout 10s grep -iE 'error|warn|fail|crit|fatal|panic' "$logfile" 2>/dev/null | tail -200 | while IFS= read -r line; do
 				[ -n "$line" ] && echo "file|$logfile|$line" >> "$output_file"
 			done || true
 		fi
@@ -442,7 +442,7 @@ logparser_generate_summary() {
 main() {
 	state_init
 
-	log_info "Starting log analyser module (scanning last $SCAN_DAYS days)..."
+	log_info "Starting log analyser module (scanning last 24 hours)..."
 
 	if ! logparser_init; then
 		log_error "Initialization failed"
