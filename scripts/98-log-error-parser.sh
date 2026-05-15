@@ -143,6 +143,36 @@ logparser_extract_message() {
 	esac
 }
 
+logparser_load_patterns() {
+	if [ ! -f "$PATTERNS_FILE" ]; then
+		return 0
+	fi
+
+	grep -E '^\s+-\s+id:' "$PATTERNS_FILE" | sed 's/.*id:\s*"\([^"]*\)".*/\1/' || true
+}
+
+logparser_match_pattern() {
+	local message="$1"
+	local pattern_id="$2"
+
+	[ -z "$pattern_id" ] && return 1
+	[ ! -f "$PATTERNS_FILE" ] && return 1
+
+	local pattern_regex
+	pattern_regex=$(awk "/id:\s*\"$pattern_id\"/,/^[[:space:]]*$/ {
+		if (/regex:/) print \$0
+	}" "$PATTERNS_FILE" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+
+	if [ -n "$pattern_regex" ]; then
+		echo "$message" | grep -iE "$pattern_regex" >/dev/null 2>&1 && {
+			echo "$pattern_id"
+			return 0
+		}
+	fi
+
+	return 1
+}
+
 logparser_escape_json_string() {
 	local s="$1"
 	s="${s//\\/\\\\}"
