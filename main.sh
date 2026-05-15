@@ -116,10 +116,10 @@ discover_modules() {
         local line
         while IFS= read -r line; do
             case "$line" in
-                "# DESC:"*)        desc="${line#"# DESC:"}"; desc="${desc# }" ;;
-                "# DEPENDS:"*)     deps="${line#"# DEPENDS:"}"; deps="${deps# }" ;;
-                "# IDEMPOTENT:"*)  idem="${line#"# IDEMPOTENT:"}"; idem="${idem# }" ;;
-                "# DESTRUCTIVE:"*) destr="${line#"# DESTRUCTIVE:"}"; destr="${destr# }" ;;
+                "# DESC:"*)        desc="${line#"# DESC:"}"; desc="${desc#"${desc%%[^ ]*}"}" ;;
+                "# DEPENDS:"*)     deps="${line#"# DEPENDS:"}"; deps="${deps#"${deps%%[^ ]*}"}" ;;
+                "# IDEMPOTENT:"*)  idem="${line#"# IDEMPOTENT:"}"; idem="${idem#"${idem%%[^ ]*}"}" ;;
+                "# DESTRUCTIVE:"*) destr="${line#"# DESTRUCTIVE:"}"; destr="${destr#"${destr%%[^ ]*}"}" ;;
             esac
         done < <(head -n 20 "$path")
         MODULE_DESC[$short]="$desc"
