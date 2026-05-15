@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.1.8 – 2026-05-15
 
 ### Changed
+- **Consistent Boolean Question Format**
+  - All yes/no questions now use (true/false) format
+  - Standardized format across USE_DHCP, AUTO_SECURITY_UPDATES, and SEND_TEST_MAIL
+  - Simpler validation and more consistent user experience
+  - Matches environment variable values
+
 - **Disk Usage Alert Threshold Simplified**
   - Removed interactive question for disk usage threshold
   - Now uses fixed default value of 85%
