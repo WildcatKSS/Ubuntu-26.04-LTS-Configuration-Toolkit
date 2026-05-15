@@ -25,9 +25,9 @@ setup() {
     done
 }
 
-@test "every module has DESC, DEPENDS, IDEMPOTENT, DESTRUCTIVE" {
+@test "every module has SUMMARY, DEPENDS, IDEMPOTENT, DESTRUCTIVE" {
     for f in "$TOOLKIT_ROOT"/scripts/[0-9]*.sh; do
-        for tag in DESC DEPENDS IDEMPOTENT DESTRUCTIVE; do
+        for tag in SUMMARY DEPENDS IDEMPOTENT DESTRUCTIVE ADDED; do
             run grep -q "^# ${tag}:" "$f"
             [ "$status" -eq 0 ] || { echo "missing # ${tag}: in $f"; return 1; }
         done
@@ -87,4 +87,16 @@ setup() {
             [ -n "${names[$d]:-}" ] || { echo "$f depends on unknown $d"; return 1; }
         done
     done
+}
+
+@test "error-patterns.yaml exists and is readable" {
+    [ -f "$TOOLKIT_ROOT/templates/error-patterns.yaml" ]
+    [ -r "$TOOLKIT_ROOT/templates/error-patterns.yaml" ]
+}
+
+@test "98-log-error-parser module has correct metadata" {
+    [ -f "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh" ]
+    grep -q '^# MODULE: 98-log-error-parser' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
+    grep -q '^# DEPENDS:$' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
+    grep -q '^# IDEMPOTENT: yes' "$TOOLKIT_ROOT/scripts/98-log-error-parser.sh"
 }

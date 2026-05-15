@@ -1,0 +1,212 @@
+# Error Patterns Database
+# Format: id, regex/substring match, severity, suggested fixes
+# Users can extend this file with custom patterns
+
+patterns:
+  - id: "apt-lock"
+    regex: "E: Could not get lock"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check apt lock status: sudo lsof /var/lib/apt/lists/lock"
+      - "Kill stuck apt process: sudo pkill -f apt-get"
+      - "Remove lock file: sudo rm -f /var/lib/apt/lists/lock"
+
+  - id: "disk-full"
+    regex: "No space left on device|100%"
+    severity: "CRITICAL"
+    suggested_fixes:
+      - "Check disk usage: df -h"
+      - "Identify large files: du -sh /* | sort -h"
+      - "Clean package cache: sudo apt clean && sudo apt autoclean"
+      - "Clean journal: journalctl --vacuum=1G"
+
+  - id: "memory-oom"
+    regex: "Out of memory|oom-kill|Memory pressure"
+    severity: "CRITICAL"
+    suggested_fixes:
+      - "Check memory usage: free -h"
+      - "View running processes: ps aux --sort=-%mem | head"
+      - "Check swap: swapon -s"
+      - "Add swap space if needed: sudo fallocate -l 4G /swapfile"
+
+  - id: "auth-failure"
+    substring: "Failed password|authentication failure"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check SSH key permissions: chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+      - "Review failed login attempts: grep 'Failed password' /var/log/auth.log | tail -20"
+      - "Consider fail2ban: sudo apt install fail2ban && sudo systemctl enable fail2ban"
+
+  - id: "service-crash"
+    regex: "Killed|Segmentation fault|SIGKILL|SIGSEGV"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check service logs: systemctl status SERVICE_NAME"
+      - "View detailed logs: journalctl -u SERVICE_NAME -n 50"
+      - "Restart service: sudo systemctl restart SERVICE_NAME"
+
+  - id: "network-timeout"
+    regex: "Connection timed out|Connection refused|Network unreachable"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check network status: ip link show"
+      - "Test connectivity: ping -c 4 8.8.8.8"
+      - "Check DNS: nslookup google.com"
+      - "Verify routing: ip route show"
+
+  - id: "permission-denied"
+    regex: "Permission denied|access denied"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check file permissions: ls -la /path/to/file"
+      - "Check user groups: id username"
+      - "Fix permissions: sudo chown user:group /path && sudo chmod 755 /path"
+
+  - id: "file-not-found"
+    regex: "No such file or directory|cannot find"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Verify file path: ls -la /path/to/file"
+      - "Check file exists: test -f /path/to/file && echo 'exists'"
+      - "Find missing file: find / -name 'filename' 2>/dev/null"
+
+  - id: "systemd-start-failed"
+    regex: "start request repeated too quickly|Failed to start|start limit"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check service status: systemctl status SERVICE_NAME"
+      - "View service errors: journalctl -u SERVICE_NAME -n 20"
+      - "Reset failed state: sudo systemctl reset-failed SERVICE_NAME"
+      - "Reload daemon: sudo systemctl daemon-reload"
+
+  - id: "package-depends"
+    regex: "depends on|broken|unmet dependencies"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Fix broken packages: sudo apt install -f"
+      - "Update package cache: sudo apt update"
+      - "Check for held packages: apt-mark showhold"
+      - "Force package fix: sudo dpkg --configure -a"
+
+  - id: "postgresql-error"
+    regex: "FATAL|PostgreSQL|database.*error|could not connect"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check PostgreSQL status: sudo systemctl status postgresql"
+      - "View logs: sudo journalctl -u postgresql -n 30"
+      - "Verify connectivity: psql -U postgres -h localhost"
+
+  - id: "nginx-error"
+    regex: "nginx.*error|bind.*permission denied|upstream timed out"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check Nginx status: sudo systemctl status nginx"
+      - "Validate config: sudo nginx -t"
+      - "View error log: sudo tail -f /var/log/nginx/error.log"
+      - "Check port binding: sudo netstat -tlnp | grep :80"
+
+  - id: "kernel-panic"
+    regex: "Kernel panic|fatal exception|Unable to mount root fs"
+    severity: "CRITICAL"
+    suggested_fixes:
+      - "Check dmesg: dmesg | tail -50"
+      - "Review journal: journalctl -xb -n 50"
+      - "Verify filesystem: sudo fsck.ext4 -n /dev/sdXY"
+
+  - id: "cpu-overload"
+    regex: "load average.*high|cpu.*thermal|throttling"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check load: uptime"
+      - "Top processes: top -b -n 1 | head -15"
+      - "Check CPU temp: sensors"
+      - "Limit CPU: cpulimit -l 80 -p PID"
+
+  - id: "dhcp-failure"
+    regex: "DHCPDISCOVER|DHCPREQUEST failed|no DHCP offers"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check interface: ip link show"
+      - "Restart DHCP: sudo systemctl restart networking"
+      - "View DHCP logs: sudo journalctl -u dhclient -n 30"
+
+  - id: "ssh-error"
+    regex: "SSH.*error|sshd|RSA.*error|key too open"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check SSH keys: ls -la ~/.ssh/"
+      - "Fix key permissions: chmod 600 ~/.ssh/id_rsa"
+      - "Test SSH: ssh -v user@host"
+      - "Restart SSH: sudo systemctl restart ssh"
+
+  - id: "sudo-denied"
+    regex: "sudo.*no tty|sudo.*lecture|sudoers"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check sudoers: sudo visudo"
+      - "View sudo logs: sudo journalctl _UID=0 | grep sudo"
+      - "User sudoers: sudo -l"
+
+  - id: "device-error"
+    regex: "device.*error|I/O error|EXT4-fs error"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check disk health: sudo smartctl -a /dev/sdX"
+      - "View disk errors: dmesg | grep -i error | tail -20"
+      - "Filesystem check: sudo fsck.ext4 -n /dev/sdXY"
+
+  - id: "firewall-blocked"
+    regex: "DROP|REJECT|blocked|firewall"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check iptables rules: sudo iptables -L -n"
+      - "Check ufw status: sudo ufw status verbose"
+      - "Allow port: sudo ufw allow 22/tcp"
+
+  - id: "ntp-sync-failure"
+    regex: "time sync|NTP.*error|clock.*error"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check NTP status: timedatectl"
+      - "Sync manually: sudo ntpdate -s time.google.com"
+      - "Restart NTP: sudo systemctl restart systemd-timesyncd"
+
+  - id: "dns-resolution"
+    regex: "DNS.*error|name resolution|host not found"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check DNS: cat /etc/resolv.conf"
+      - "Test DNS: nslookup google.com"
+      - "Flush cache: sudo systemctl restart systemd-resolved"
+
+  - id: "swap-error"
+    regex: "swap.*error|Cannot allocate memory|swap.*failed"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check swap: swapon -s"
+      - "View swap usage: free -h"
+      - "Create swap: sudo dd if=/dev/zero of=/swapfile bs=1M count=4096"
+
+  - id: "mount-failure"
+    regex: "mount.*error|mountpoint|cannot mount"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check mounts: mount | grep /mnt"
+      - "List block devices: lsblk"
+      - "Mount manually: sudo mount /dev/sdXY /mnt/point"
+
+  - id: "cron-error"
+    regex: "cron.*error|crontab.*error|command not found"
+    severity: "ERROR"
+    suggested_fixes:
+      - "Check cron logs: sudo journalctl -u cron -n 30"
+      - "List cron jobs: crontab -l"
+      - "Edit cron: crontab -e"
+
+  - id: "hostname-mismatch"
+    regex: "hostname.*mismatch|certificate.*mismatch"
+    severity: "WARNING"
+    suggested_fixes:
+      - "Check hostname: hostname"
+      - "Set hostname: sudo hostnamectl set-hostname NEW_NAME"
+      - "Verify DNS: dig +short hostname"
