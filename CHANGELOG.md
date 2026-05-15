@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminates postfix log warnings: "warning: not owned by root"
   - Runs after postfix installation to fix any permission issues from package setup
 
+- **UFW Firewall Rules Now Service-Aware**: Fixed blind SSH rule creation
+  - Only creates firewall rules for services that are actually running
+  - Checks `systemctl is-active` for ssh, postfix, dovecot before allowing ports
+  - Supports: ssh (22/tcp), postfix (25/tcp), dovecot (143/tcp)
+  - Eliminates UFW rules for non-installed services
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed
