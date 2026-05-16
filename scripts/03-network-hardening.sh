@@ -4,12 +4,10 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      03-network-hardening
-# SUMMARY:     Disable cloud-init, UFW (SSH-only), IPv6, fail2ban
+# DESC:     Disable cloud-init, UFW (SSH-only), IPv6, fail2ban
 # DEPENDS:     02-ip-config
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
-# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -26,10 +24,10 @@ if plan_action "disable cloud-init"; then
         log_info "Created /etc/cloud/cloud-init.disabled"
     fi
     for svc in cloud-init cloud-config cloud-final cloud-init-local; do
-        if run_quiet systemctl list-unit-files "${svc}.service" \
-            && ! run_quiet systemctl is-enabled "${svc}.service" | grep -q masked; then
-            run_quiet systemctl mask "${svc}.service" || true
-        fi
+        run_quiet systemctl list-unit-files "${svc}.service" || continue
+        state="$(systemctl is-enabled "${svc}.service" 2>/dev/null || true)"
+        [ "$state" = "masked" ] && continue
+        run_quiet systemctl mask "${svc}.service" || true
     done
 fi
 
@@ -46,7 +44,8 @@ fi
 # 4. UFW
 if plan_action "configure UFW (default deny in / allow out, allow SSH)"; then
     pkg_install ufw
-    if run_quiet ufw status | grep -q 'Status: active'; then
+    ufw_status="$(ufw status 2>/dev/null || true)"
+    if [[ "$ufw_status" == *"Status: active"* ]]; then
         log_info "UFW already active — verifying SSH rule"
     else
         run_quiet ufw --force reset
@@ -55,8 +54,9 @@ if plan_action "configure UFW (default deny in / allow out, allow SSH)"; then
         run_quiet ufw allow 22/tcp comment 'SSH'
         run_quiet ufw --force enable
         log_info "UFW enabled with SSH rule"
+        ufw_status="$(ufw status 2>/dev/null || true)"
     fi
-    if ! run_quiet ufw status | grep -q '22/tcp'; then
+    if [[ "$ufw_status" != *"22/tcp"* ]]; then
         run_quiet ufw allow 22/tcp comment 'SSH'
     fi
 fi
@@ -76,7 +76,6 @@ EOF
             log_info "grub already has ipv6.disable=1"
         else
             sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 ipv6.disable=1"/' /etc/default/grub
-            sed -i 's/  *ipv6.disable=1"/ ipv6.disable=1"/' /etc/default/grub
             if command -v update-grub >/dev/null 2>&1; then
                 run_quiet update-grub || log_warn "update-grub failed (non-fatal)"
             fi

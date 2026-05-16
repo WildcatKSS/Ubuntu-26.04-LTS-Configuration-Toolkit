@@ -52,13 +52,13 @@ pkg_purge() {
 
 # pkg_update — refresh apt indexes (cached for 60 minutes per run).
 pkg_update() {
-    local stamp="/tmp/.toolkit-apt-updated"
+    local stamp="${TOOLKIT_PERSISTENT_DIR:-/var/log/toolkit-setup}/.apt-updated"
     if [ -f "$stamp" ] && [ "$(($(date +%s) - $(stat -c %Y "$stamp")))" -lt 3600 ]; then
         log_info "apt-get update skipped (cached)"
         return 0
     fi
     log_info "Running apt-get update"
-    if ! run_quiet apt-get update -y; then
+    if ! run_quiet apt-get update; then
         log_error "apt-get update failed"
         return 1
     fi

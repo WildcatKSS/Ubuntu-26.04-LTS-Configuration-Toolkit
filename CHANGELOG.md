@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Releases
 
+## 1.1.9 – 2026-05-16
+
+### Fixed
+- **`# DESC:` parser mismatch (A1)** — `main.sh` parsed `# DESC:` but every
+  module shipped `# SUMMARY:`, so `--list` printed "(none)" and the
+  structural idempotency test failed. Renamed the header to `# DESC:` across
+  all 10 modules and the contributor docs.
+- **`run_quiet` swallow-stdout bug class (A2)** — 8 sites used
+  `run_quiet X | grep`/`awk`/`sed` or `$(run_quiet X)`. `run_quiet`
+  redirects both stdout and stderr, so consumers silently received empty
+  input and idempotency guards never triggered (hostname, timezone, locale,
+  UFW, AppArmor, cloud-init, netplan probes). Replaced each site with
+  `X 2>/dev/null | …`. Added a regression test in `tests/test_common.bats`
+  and a contract warning in `run_quiet`'s docstring.
+- **RHEL-style `chronyd` fallback (A3)** — Ubuntu's chrony service is
+  `chrony.service`; the fallback never matched. Removed.
+- **`SEND_TEST_MAIL` string-format regression (A4)** — the 1.1.8
+  boolean migration wrote `"true"`/`"false"` to config, but
+  `08-mail-alerting.sh` still checked for `"yes"`. Test mail never sent.
+  Aligned the check and default value.
+- **Logrotate path mismatch (A5)** — the template rotated
+  `/var/log/toolkit-setup.log` but `main.sh` writes
+  `/var/log/toolkit-setup/toolkit-setup.log` (subdir). Toolkit log never
+  rotated. Path corrected.
+- **Logrotate double-rotation (A6)** — the template duplicated
+  `/var/log/auth.log` and `/var/log/cron.log`, which Ubuntu's default
+  rsyslog policy already manages. Removed to avoid double-rotation.
+
+### Added
+- `lib/system.sh`: `system_file_backup` (one-time `.toolkit.bak`) and
+  `system_render_install` (envsubst → cmp → install pipeline).
+  `02-ip-config.sh` now uses them.
+- `tests/test_common.bats`: regression test pinning `run_quiet`'s
+  swallow-stdout contract.
+
+### Changed
+- Finished the `plan_action` rollout started in 1.0.2 (modules 01, 04, 05,
+  06, 07, 99) — eliminates the parallel `if PLAN_MODE = 1` branches.
+- `state_summary` rewritten as a single bash pass (was awk-per-row +
+  multiple `date` shell-outs).
+- `install_test_deps` collapsed three near-identical blocks into a single
+  `tool:package` loop.
+- `lib/log.sh`: log-level filter runs before `date` formatting; tty check
+  uses `[ -t 2 ]` since the logger writes to stderr.
+- `lib/system.sh`: `system_service_mask` reads `is-enabled` as a string
+  rather than piping through grep. `system_confirm` non-interactive branch
+  inlined to a single test.
+- `lib/pkg.sh`: apt-update stamp moved from `/tmp` to
+  `$TOOLKIT_PERSISTENT_DIR`.
+- `main.sh`: dropped the redundant `env "${env_vars[@]}" bash …` wrapper
+  (TOOLKIT_ROOT and TOOLKIT_PLAN_MODE are already exported) and the
+  duplicate best-effort `mkdir`. CSV join now uses `IFS=,`.
+- `scripts/01-base-config.sh`: sudo-group check replaced
+  `id -nG | tr | grep` with a bash pattern match.
+- `scripts/02-ip-config.sh`: informational ip/route/socket probes demoted
+  from `log_info` to `log_debug` (they spam idempotent re-runs).
+- `scripts/03-network-hardening.sh`: cloud-init mask loop and UFW status
+  check no longer pipe through `grep`. Removed redundant grub sed.
+- `scripts/06-hardening.sh`: AppArmor status captured once instead of
+  invoked twice.
+- `scripts/hooks/pre-commit`: replaced `grep | wc -l` with `grep -qE`.
+- `templates/disk-alert.sh`: disk loop uses `df --output=pcent,target` +
+  bash parameter expansion instead of awk-per-line.
+- `scripts/00-preflight.sh`: free-GB extraction uses `tr` instead of awk.
+- `lib/questionnaire.sh`: lowercasing uses bash `${var,,}` (was triple
+  fork). Dependency-loop string matches use `[[ ]]` (was `echo | grep`).
+  Re-indented the email section so the conditional body is visibly
+  inside the `if`.
+- `tests/test_templates.bats`: shared setup moved to `setup()` /
+  `teardown()` hooks instead of being repeated in 5 tests.
+
+### Removed
+- `lib/version.sh` — 28 LoC for what is now a one-line `cat VERSION` in
+  `main.sh`. `toolkit_validate_version_format` was already unused.
+- `scripts/setup-hooks.sh` — wrapped a single `ln -sf`. Documented inline
+  in README + CONTRIBUTING instead.
+- `.github/workflows/version-check.yml`: auto-comment step that posted
+  "✅ Version Check Passed" on every successful run (the PR check status
+  already conveys this).
+- Module header fields `# ADDED:` and `# CHANGED:` — not parsed by
+  `main.sh` and duplicated by CHANGELOG + git history.
+- CONTRIBUTING.md: trimmed from 313 to 140 lines (removed the duplicated
+  "Update VERSION" example, the `[Unreleased]` references that didn't
+  match the actual CHANGELOG, and the `lib/version.sh` runtime example).
+- README.md: trimmed the redundant "MIT License Summary" block (the
+  LICENSE file already covers it) and the trivial "Update" section.
+
 ## 1.1.8 – 2026-05-15
 
 ### Fixed

@@ -8,13 +8,12 @@ TOOLKIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$TOOLKIT_ROOT"
 
 STAGED_FILES=$(git diff --cached --name-only)
-CHANGED_CODE_FILES=$(echo "$STAGED_FILES" | grep -E '^(scripts/|lib/|main\.sh|templates/)' | wc -l)
+VERSION_CHANGED=0
+CHANGELOG_CHANGED=0
+echo "$STAGED_FILES" | grep -qE '^VERSION$'      && VERSION_CHANGED=1
+echo "$STAGED_FILES" | grep -qE '^CHANGELOG\.md$' && CHANGELOG_CHANGED=1
 
-# If any code files are staged, check that VERSION or CHANGELOG were modified
-if [ "$CHANGED_CODE_FILES" -gt 0 ]; then
-    VERSION_CHANGED=$(echo "$STAGED_FILES" | grep -c '^VERSION$' || true)
-    CHANGELOG_CHANGED=$(echo "$STAGED_FILES" | grep -c '^CHANGELOG\.md$' || true)
-
+if echo "$STAGED_FILES" | grep -qE '^(scripts/|lib/|main\.sh|templates/)'; then
     if [ "$VERSION_CHANGED" -eq 0 ] && [ "$CHANGELOG_CHANGED" -eq 0 ]; then
         echo "❌ Pre-commit hook: Code changes detected but VERSION or CHANGELOG not updated"
         echo ""

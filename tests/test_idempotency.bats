@@ -36,7 +36,7 @@ setup() {
 
 @test "every module is marked IDEMPOTENT: yes" {
     for f in "$TOOLKIT_ROOT"/scripts/[0-9]*.sh; do
-        run grep -q '^# IDEMPOTENT: yes' "$f"
+        run grep -qE '^# IDEMPOTENT:[[:space:]]+yes' "$f"
         [ "$status" -eq 0 ] || { echo "module $f is not idempotent"; return 1; }
     done
 }

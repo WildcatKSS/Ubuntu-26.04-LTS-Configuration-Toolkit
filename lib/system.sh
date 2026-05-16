@@ -28,7 +28,7 @@ system_confirm() {
     if [ "${TOOLKIT_NONINTERACTIVE:-0}" = "1" ]; then
         log_info "Non-interactive mode: using default '$default' for: $question"
         [ "$default" = "yes" ]
-        return $?
+        return
     fi
 
     local answer
@@ -71,12 +71,15 @@ system_service_enable_start() {
 # system_service_mask <service>
 system_service_mask() {
     local svc="$1"
-    if systemctl is-enabled --quiet "$svc" 2>/dev/null; then
+    local state
+    state="$(systemctl is-enabled "$svc" 2>/dev/null || true)"
+    if [ "$state" = "masked" ]; then
+        return 0
+    fi
+    if [ -n "$state" ] && [ "$state" != "disabled" ]; then
         systemctl disable --now "$svc" 2>/dev/null || true
     fi
-    if ! systemctl is-enabled "$svc" 2>/dev/null | grep -q masked; then
-        systemctl mask "$svc" 2>/dev/null || log_warn "Could not mask service: $svc"
-    fi
+    systemctl mask "$svc" 2>/dev/null || log_warn "Could not mask service: $svc"
 }
 
 # system_file_install <src> <dst> [mode]
@@ -95,4 +98,40 @@ system_file_install() {
     fi
     install -m "$mode" "$src" "$dst"
     log_info "Installed: $dst (mode $mode)"
+}
+
+# system_file_backup <file>
+# Creates "<file>.toolkit.bak" once, before the toolkit first overwrites it.
+system_file_backup() {
+    local file="$1"
+    [ -f "$file" ] && [ ! -f "${file}.toolkit.bak" ] && cp "$file" "${file}.toolkit.bak"
+}
+
+# system_render_install <template> <dst> [mode]
+# Renders an envsubst template into a temp file, then installs to <dst> only
+# if content differs (idempotent). Backs up any existing <dst> on first
+# replace. Returns 0 if installed (caller should restart the consuming
+# service), 1 if unchanged or missing template.
+system_render_install() {
+    local template="$1"
+    local dst="$2"
+    local mode="${3:-0644}"
+    if [ ! -f "$template" ]; then
+        log_error "Template missing: $template"
+        return 1
+    fi
+    local tmp
+    tmp="$(mktemp)"
+    envsubst < "$template" > "$tmp"
+    chmod "$mode" "$tmp"
+    if [ -f "$dst" ] && cmp -s "$tmp" "$dst"; then
+        rm -f "$tmp"
+        log_info "File unchanged: $dst"
+        return 1
+    fi
+    system_file_backup "$dst"
+    install -m "$mode" "$tmp" "$dst"
+    rm -f "$tmp"
+    log_info "Installed: $dst (mode $mode)"
+    return 0
 }

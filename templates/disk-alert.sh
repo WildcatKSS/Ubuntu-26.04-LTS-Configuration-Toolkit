@@ -22,13 +22,13 @@ mkdir -p "$ALERT_DIR"
 ALERTS=""
 
 # --- Disk usage ---
-while IFS= read -r line; do
-    pct="$(echo "$line" | awk '{print $5}' | tr -d '%')"
+while read -r pcent target; do
+    pct="${pcent%\%}"
     [ -z "$pct" ] && continue
     if [ "$pct" -ge "$DISK_ALERT_THRESHOLD" ]; then
-        ALERTS+="DISK: $line\n"
+        ALERTS+="DISK: $target $pcent\n"
     fi
-done < <(df -h --output=source,size,used,avail,pcent,target -x tmpfs -x devtmpfs | tail -n +2)
+done < <(df -h --output=pcent,target -x tmpfs -x devtmpfs | tail -n +2)
 
 # --- Failed services ---
 failed_services="$(systemctl --failed --no-legend --plain 2>/dev/null)"

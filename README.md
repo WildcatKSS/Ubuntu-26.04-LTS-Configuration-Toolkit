@@ -17,11 +17,6 @@ sudo vi config/defaults.conf
 sudo ./main.sh
 ```
 
-Update
-```bash
-git pull origin main
-```
-
 ---
 
 ## Flags
@@ -31,12 +26,13 @@ Inspection / preview:
   --list                Print discovered modules with metadata and exit.
   --plan                Read-only audit: modules report what they would change.
   --dry-run             Run scripts with bash -n (syntax check, no execution).
+  --test                Run syntax checks, linting, and BATS tests.
 
 Execution control:
   --resume              Skip modules already recorded as complete.
   --force               Re-run all modules, even completed ones.
   --ignore-errors       Continue when a non-critical module exits non-zero.
-  --test                Run end-to-end idempotency validation (CI/CD mode).
+
   -h, --help            Show this help and exit.
   -v, --version         Show version and exit.
 ```
@@ -103,11 +99,10 @@ declares its metadata in a header:
 
 ```bash
 # MODULE:      06-hardening
-# SUMMARY:     Kernel sysctl hardening, AppArmor verification, auditd setup
+# DESC:        Kernel sysctl hardening, AppArmor verification, auditd setup
 # DEPENDS:     05-packages
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
 ```
 
 | # | Script | What it does |
@@ -174,53 +169,17 @@ grep ERROR /var/log/toolkit-setup/toolkit-setup.log
 
 ## Development Setup (for contributors)
 
-If you're contributing code changes, set up development hooks:
+Enable the pre-commit hook that validates VERSION/CHANGELOG updates:
 
 ```bash
-bash scripts/setup-hooks.sh
+ln -sf ../../scripts/hooks/pre-commit .git/hooks/pre-commit
 ```
 
-This enables automatic checks for:
-- ✅ VERSION file updates on code changes
-- ✅ Semantic versioning validation
-- ✅ CHANGELOG.md updates
-
-**When making a PR**, update VERSION and CHANGELOG.md with your changes:
-```bash
-# See current version
-cat VERSION
-
-# Update VERSION based on your changes (MAJOR.MINOR.PATCH)
-echo "1.1.0" > VERSION
-
-# Update CHANGELOG.md under Releases section
-vi CHANGELOG.md
-
-# Commit (hooks will validate)
-git commit -am "Your changes"
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+When making a PR, bump `VERSION` (MAJOR.MINOR.PATCH) and add a section to
+`CHANGELOG.md`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
-for the full text.
-
-### Copyright
-
-© 2026 WildcatKSS
-
-### MIT License Summary
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software to use, modify, merge, publish, distribute, sublicense, and/or
-sell copies, subject only to the following conditions:
-
-- The above copyright notice and this permission notice must be included in all
-  copies or substantial portions of the software.
-- The software is provided "as-is" without any warranty or liability.
-
-For full terms, see [LICENSE](LICENSE).
+MIT. © 2026 WildcatKSS. See [LICENSE](LICENSE).

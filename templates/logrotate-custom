@@ -1,9 +1,11 @@
 # Logrotate policy — installed by script 07-monitoring
 # /etc/logrotate.d/custom
+#
+# Only paths the toolkit owns. /var/log/auth.log, /var/log/cron.log and
+# similar are already managed by Ubuntu's default /etc/logrotate.d/rsyslog
+# and must not be listed here to avoid double-rotation.
 
-/var/log/toolkit-setup.log
-/var/log/auth.log
-/var/log/cron.log
+/var/log/toolkit-setup/toolkit-setup.log
 /var/log/kernel-warnings.log
 {
     daily
@@ -16,20 +18,5 @@
     sharedscripts
     postrotate
         systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
-    endscript
-}
-
-/var/log/audit/audit.log
-{
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 0600 root root
-    sharedscripts
-    postrotate
-        /sbin/service auditd restart >/dev/null 2>&1 || true
     endscript
 }

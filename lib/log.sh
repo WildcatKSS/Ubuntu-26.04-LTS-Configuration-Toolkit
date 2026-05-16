@@ -14,8 +14,8 @@
 #   warn   — show WARN, ERROR
 #   error  — show ERROR only
 
-# Color codes (only used when output is a tty)
-if [ -t 1 ]; then
+# Color codes (only used when stderr is a tty; logger writes to stderr)
+if [ -t 2 ]; then
     readonly _LOG_COLOR_RESET="\033[0m"
     readonly _LOG_COLOR_DEBUG="\033[0;36m"
     readonly _LOG_COLOR_INFO="\033[0;32m"
@@ -48,9 +48,9 @@ _log_level_enabled() {
 
 _log_write() {
     local level="$1"
+    _log_level_enabled "$level" || return 0
     local color="$2"
     local message="$3"
-    _log_level_enabled "$level" || return 0
     local timestamp
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     # Identify the calling script by iterating over BASH_SOURCE rather than
@@ -102,11 +102,12 @@ log_check_diskspace() {
 }
 
 # run_quiet <command> [args...]
-# Execute a command silently (suppress stdout/stderr to /dev/null)
-# Exit code is preserved; critical for error handling with set -e
+# Execute a command silently. Exit code is preserved.
+#
+# WARNING: Do NOT use inside command substitution (`$(run_quiet …)`) or as
+# the producer in a pipe (`run_quiet … | grep`). Both stdout AND stderr are
+# redirected, so the caller gets empty input and idempotency guards silently
+# misfire. Use `cmd 2>/dev/null` for those cases instead.
 run_quiet() {
-    local exit_code
     "$@" >/dev/null 2>&1
-    exit_code=$?
-    return "$exit_code"
 }

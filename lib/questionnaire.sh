@@ -29,7 +29,7 @@
 #   SMTP_RELAY_PORT             SMTP relay port
 #   DISK_ALERT_THRESHOLD        Disk usage alert threshold percentage
 #   AUTO_SECURITY_UPDATES       "true" or "false" for unattended upgrades
-#   SEND_TEST_MAIL              "yes" to send a test mail after postfix setup
+#   SEND_TEST_MAIL              "true" to send a test mail after postfix setup
 
 # detect_network_interface
 # Auto-detect the first active network interface (excluding lo)
@@ -73,7 +73,7 @@ config_create_defaults() {
     export SMTP_RELAY_PORT="587"
     export DISK_ALERT_THRESHOLD="85"
     export AUTO_SECURITY_UPDATES="true"
-    export SEND_TEST_MAIL="no"
+    export SEND_TEST_MAIL="false"
 }
 
 # questionnaire_prompt_string <prompt> [default]
@@ -104,7 +104,7 @@ questionnaire_prompt_password() {
         read -rs password1
         echo >&2
 
-        printf 'Confirm %s: ' "$(echo "$prompt" | tr '[:upper:]' '[:lower:]')" >&2
+        printf 'Confirm %s: ' "${prompt,,}" >&2
         read -rs password2
         echo >&2
 
@@ -272,36 +272,36 @@ questionnaire_run() {
     # -------------------------------------------------------------------------
     if [[ "$selected_modules" == *"08-mail-alerting"* ]] || [ -z "$selected_modules" ]; then
         log_info "Section 4: Email and alerts"
-    echo
-    echo "The toolkit configures Postfix as an SMTP relay for email notifications."
-    echo "You will receive daily reports on server status and immediate"
-    echo "alerts for high disk usage or failed services."
-    echo "Enter the address of your own SMTP relay (e.g. your mail provider or"
-    echo "an internal mail server). Store authentication credentials in"
-    echo "/etc/postfix/sasl_passwd after installation."
-    echo
+        echo
+        echo "The toolkit configures Postfix as an SMTP relay for email notifications."
+        echo "You will receive daily reports on server status and immediate"
+        echo "alerts for high disk usage or failed services."
+        echo "Enter the address of your own SMTP relay (e.g. your mail provider or"
+        echo "an internal mail server). Store authentication credentials in"
+        echo "/etc/postfix/sasl_passwd after installation."
+        echo
 
-    EMAIL_TO=$(questionnaire_prompt_string "Email address for alerts" "admin@example.com")
-    export EMAIL_TO
+        EMAIL_TO=$(questionnaire_prompt_string "Email address for alerts" "admin@example.com")
+        export EMAIL_TO
 
-    SMTP_RELAY_HOST=$(questionnaire_prompt_string "SMTP relay hostname" "smtp.example.com")
-    export SMTP_RELAY_HOST
+        SMTP_RELAY_HOST=$(questionnaire_prompt_string "SMTP relay hostname" "smtp.example.com")
+        export SMTP_RELAY_HOST
 
-    SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay port" "587")
-    export SMTP_RELAY_PORT
+        SMTP_RELAY_PORT=$(questionnaire_prompt_string "SMTP relay port" "587")
+        export SMTP_RELAY_PORT
 
-    export DISK_ALERT_THRESHOLD="85"
-
-    echo
-    echo "After Postfix installation, a test mail can be sent to"
-    echo "$EMAIL_TO to verify the mail relay works correctly."
-    echo
-
-    SEND_TEST_MAIL=$(questionnaire_prompt_string "Send test mail after Postfix installation? (true/false)" "false")
-    export SEND_TEST_MAIL
+        export DISK_ALERT_THRESHOLD="85"
 
         echo
-    fi  # end email section
+        echo "After Postfix installation, a test mail can be sent to"
+        echo "$EMAIL_TO to verify the mail relay works correctly."
+        echo
+
+        SEND_TEST_MAIL=$(questionnaire_prompt_string "Send test mail after Postfix installation? (true/false)" "false")
+        export SEND_TEST_MAIL
+
+        echo
+    fi
 
     # -------------------------------------------------------------------------
     # Section 5: Security Updates
@@ -455,7 +455,7 @@ questionnaire_check_broken_deps() {
         local deps="${MODULE_DEPENDS[$short]:-}"
         [ -z "$deps" ] && continue
 
-        if echo ",$deps," | grep -q ",$module,"; then
+        if [[ ",$deps," == *",$module,"* ]]; then
             broken+=("$short")
         fi
     done
@@ -548,7 +548,7 @@ EOF
     echo "EMAIL_TO=\"${EMAIL_TO:-admin@example.com}\"" >> "$conf_file"
     echo "SMTP_RELAY_HOST=\"${SMTP_RELAY_HOST:-smtp.example.com}\"" >> "$conf_file"
     echo "SMTP_RELAY_PORT=\"${SMTP_RELAY_PORT:-587}\"" >> "$conf_file"
-    echo "SEND_TEST_MAIL=\"${SEND_TEST_MAIL:-no}\"" >> "$conf_file"
+    echo "SEND_TEST_MAIL=\"${SEND_TEST_MAIL:-false}\"" >> "$conf_file"
 
     cat >> "$conf_file" <<'EOF'
 
@@ -584,7 +584,7 @@ questionnaire_deselect_dependents() {
         local deps="${MODULE_DEPENDS[$short]:-}"
         [ -z "$deps" ] && continue
 
-        if echo ",$deps," | grep -q ",$module,"; then
+        if [[ ",$deps," == *",$module,"* ]]; then
             QUESTIONNAIRE_SELECTED[$short]=0
             log_info "  (also disabled: $short — it requires $module)"
             questionnaire_deselect_dependents "$short"
