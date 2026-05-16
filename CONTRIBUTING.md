@@ -49,8 +49,6 @@ Create `scripts/50-myfeature.sh` with the standard metadata header:
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 source "$TOOLKIT_ROOT/lib/common.sh"
-
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 ```
 
 Make the script executable: `chmod +x scripts/50-myfeature.sh`.
