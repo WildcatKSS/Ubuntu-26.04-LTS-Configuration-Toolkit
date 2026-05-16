@@ -14,8 +14,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 if plan_action "run apt autoremove + clean and verify service status"; then
     log_info "Running apt autoremove + clean"
     run_quiet apt-get autoremove -y

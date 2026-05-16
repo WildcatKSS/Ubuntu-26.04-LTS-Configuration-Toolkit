@@ -14,8 +14,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Hostname
 if plan_action "set hostname to $HOSTNAME"; then
     if [ "$(hostname 2>/dev/null)" = "$HOSTNAME" ]; then

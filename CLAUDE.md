@@ -37,15 +37,22 @@ LICENSE                    — MIT License
   set -euo pipefail
   TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
   source "$TOOLKIT_ROOT/lib/common.sh"
-  PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
   ```
+- **Plan mode**: wrap every mutation in
+  `if plan_action "describe what would change"; then …; fi`. The helper
+  returns 1 (skip) when `TOOLKIT_PLAN_MODE=1` and 0 (run) otherwise, so the
+  same source path handles both real runs and `--plan` audits.
 - **Idempotency**: always check current state before mutating. Patterns to use:
   - `pkg_install` (skips installed packages)
   - `system_file_install` (only writes if cmp differs)
   - `grep -q PATTERN /etc/file || ...`
   - `[ -f marker ] || do-thing && touch marker`
 - **Logging**: `log_info`, `log_warn`, `log_error` — never bare `echo` for status.
-- **Plan mode**: when `TOOLKIT_PLAN_MODE=1`, do NOT mutate. Log what would happen.
+- **`run_quiet` contract**: silences a command's stdout AND stderr; use it
+  only for fire-and-forget calls where you care about the exit code (e.g.
+  `if run_quiet aa-status --enabled`). NEVER inside `$(…)` or as a pipe
+  producer — the consumer gets empty input and idempotency guards silently
+  misfire. Use `cmd 2>/dev/null` for those cases.
 - **Function namespacing**: prefix custom functions with the module short name
   (e.g. `mycompany_*`) to avoid colliding with `log_*`, `pkg_*`, `system_*`,
   `state_*`, `config_*`.
@@ -95,6 +102,10 @@ system_user_exists alice
 system_service_enable_start nginx    # idempotent enable+start, warn on fail
 system_service_mask systemd-timesyncd
 system_file_install src dst [mode]   # cmp-based copy (idempotent)
+system_file_backup file              # one-time <file>.toolkit.bak
+system_render_install tmpl dst [mode] # envsubst → cmp → install (idempotent)
+
+plan_action "would do X"             # returns 1 (skip) under TOOLKIT_PLAN_MODE=1
 
 pkg_update                           # apt-get update (cached 60min)
 pkg_install vim htop curl            # only installs missing

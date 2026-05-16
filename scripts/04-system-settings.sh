@@ -14,8 +14,6 @@ TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Timezone
 if plan_action "set timezone to $TIMEZONE"; then
     current_tz="$(timedatectl show --value -p Timezone 2>/dev/null || echo unknown)"
