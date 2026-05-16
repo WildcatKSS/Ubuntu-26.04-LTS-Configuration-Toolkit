@@ -4,19 +4,15 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      08-mail-alerting
-# SUMMARY:     Postfix relay, daily report cron, disk/service alerts
+# DESC:     Postfix relay, daily report cron, disk/service alerts
 # DEPENDS:     07-monitoring
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
-# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
-
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # Pre-seed postfix to avoid debconf prompts
 if plan_action "pre-seed postfix and install postfix/mailutils"; then
@@ -41,7 +37,7 @@ if plan_action "render $template -> $target"; then
         log_info "Postfix main.cf unchanged"
         rm -f "$tmp"
     else
-        [ -f "$target" ] && [ ! -f "${target}.toolkit.bak" ] && cp "$target" "${target}.toolkit.bak"
+        system_file_backup "$target"
         install -m 0644 "$tmp" "$target"
         rm -f "$tmp"
         run_quiet systemctl restart postfix || log_warn "postfix restart failed"
@@ -88,7 +84,7 @@ EOF
 fi
 
 # 5. Optional test mail
-if [ "${SEND_TEST_MAIL:-no}" = "yes" ]; then
+if [ "${SEND_TEST_MAIL:-false}" = "true" ]; then
     if plan_action "send test mail to ${EMAIL_TO}"; then
         log_info "Sending test mail to ${EMAIL_TO}..."
         if echo "This is a test mail from the Ubuntu 26.04 Toolkit on $(hostname). Postfix relay is working correctly." \

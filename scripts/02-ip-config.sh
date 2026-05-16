@@ -4,23 +4,19 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      02-ip-config
-# SUMMARY:     Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore
+# DESC:     Hostname, /etc/hosts, Netplan IP/DNS/gateway with auto-restore
 # DEPENDS:     01-base-config
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
-# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Hostname
 if plan_action "set hostname to $HOSTNAME"; then
-    if [ "$(run_quiet hostname)" = "$HOSTNAME" ]; then
+    if [ "$(hostname 2>/dev/null)" = "$HOSTNAME" ]; then
         log_info "Hostname already set: $HOSTNAME"
     else
         run_quiet hostnamectl set-hostname "$HOSTNAME"
@@ -75,19 +71,7 @@ else
 fi
 
 if plan_action "render $template -> $target and run netplan apply"; then
-    tmp="$(mktemp)"
-    envsubst < "$template" > "$tmp"
-    chmod 0600 "$tmp"
-
-    if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
-        log_info "Netplan config unchanged — skipping apply"
-        rm -f "$tmp"
-    else
-        install -m 0600 "$tmp" "$target"
-        rm -f "$tmp"
-        log_info "Wrote $target"
-
-        # 5. Apply with auto-restore on connectivity failure
+    if system_render_install "$template" "$target" 0600; then
         if ! run_quiet netplan apply; then
             log_error "netplan apply failed — restoring backup"
             rm -f "$target"
@@ -110,12 +94,12 @@ if plan_action "render $template -> $target and run netplan apply"; then
     fi
 fi
 
-# 6. Verification (informational)
-log_info "Active interface state:"
-run_quiet ip -brief addr show "$NETWORK_INTERFACE" | sed 's/^/  /' || true
-log_info "Routing table:"
-run_quiet ip -4 route | sed 's/^/  /' || true
-log_info "Listening sockets:"
-run_quiet ss -tlnp | head -n 20 | sed 's/^/  /' || true
+# 6. Verification (debug only — noisy on idempotent re-runs)
+log_debug "Active interface state:"
+ip -brief addr show "$NETWORK_INTERFACE" 2>/dev/null | sed 's/^/  /' || true
+log_debug "Routing table:"
+ip -4 route 2>/dev/null | sed 's/^/  /' || true
+log_debug "Listening sockets:"
+ss -tlnp 2>/dev/null | head -n 20 | sed 's/^/  /' || true
 
 log_info "IP configuration complete"

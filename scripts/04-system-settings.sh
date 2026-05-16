@@ -4,24 +4,19 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      04-system-settings
-# SUMMARY:     Timezone, locale, NTP via chrony
+# DESC:     Timezone, locale, NTP via chrony
 # DEPENDS:     01-base-config
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
-
 # 1. Timezone
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would set timezone to $TIMEZONE"
-else
-    current_tz="$(run_quiet timedatectl show --value -p Timezone || echo unknown)"
+if plan_action "set timezone to $TIMEZONE"; then
+    current_tz="$(timedatectl show --value -p Timezone 2>/dev/null || echo unknown)"
     if [ "$current_tz" = "$TIMEZONE" ]; then
         log_info "Timezone already set: $TIMEZONE"
     else
@@ -31,10 +26,8 @@ else
 fi
 
 # 2. Locale
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would generate locale $LOCALE and set as default"
-else
-    if run_quiet locale -a | grep -qi "^${LOCALE//-/}$\|^${LOCALE}$"; then
+if plan_action "generate locale $LOCALE and set as default"; then
+    if locale -a 2>/dev/null | grep -qi "^${LOCALE//-/}$\|^${LOCALE}$"; then
         log_info "Locale already generated: $LOCALE"
     else
         if [ -f /etc/locale.gen ]; then
@@ -48,9 +41,7 @@ else
 fi
 
 # 3. NTP via chrony
-if [ "$PLAN_MODE" = "1" ]; then
-    log_info "PLAN: would mask systemd-timesyncd, install chrony, configure NTP servers"
-else
+if plan_action "mask systemd-timesyncd, install chrony, configure NTP servers"; then
     system_service_mask systemd-timesyncd
     pkg_install chrony
 
@@ -79,18 +70,15 @@ EOF
         log_info "chrony.conf unchanged"
         rm -f "$tmp"
     else
-        if [ -f "$chrony_conf" ] && [ ! -f "${chrony_conf}.toolkit.bak" ]; then
-            cp "$chrony_conf" "${chrony_conf}.toolkit.bak"
-        fi
+        system_file_backup "$chrony_conf"
         install -m 0644 "$tmp" "$chrony_conf"
         rm -f "$tmp"
-        run_quiet systemctl restart chrony || run_quiet systemctl restart chronyd \
-            || log_warn "chrony restart failed"
+        run_quiet systemctl restart chrony || log_warn "chrony restart failed"
     fi
-    system_service_enable_start chrony || system_service_enable_start chronyd || true
+    system_service_enable_start chrony || true
 
     if command -v chronyc >/dev/null 2>&1; then
-        run_quiet chronyc tracking | sed 's/^/  /' || true
+        chronyc tracking 2>/dev/null | sed 's/^/  /' || true
     fi
 fi
 

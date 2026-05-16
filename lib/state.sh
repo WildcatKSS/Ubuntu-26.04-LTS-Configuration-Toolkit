@@ -58,61 +58,31 @@ state_clear() {
 state_summary() {
     local path
     path="$(state_active_path)"
-    if [ ! -f "$path" ] || [ ! -s "$path" ]; then
+    if [ ! -s "$path" ]; then
         echo "(no modules completed yet)"
         return 0
     fi
 
-    # Print header
     printf "  %-30s %-20s %s\n" "Module" "Completed At" "Duration"
     printf "  %-30s %-20s %s\n" "------" "------------" "--------"
 
-    # Process state file and calculate durations
-    local prev_time=""
-    awk -F'\t' '
-    BEGIN { prev_time = "" }
-    {
-        module = $1
-        curr_time = $2
-
-        # Calculate duration if we have a previous time
-        duration = ""
-        if (prev_time != "") {
-            cmd = "date -d \"" prev_time "\" +%s 2>/dev/null"
-            cmd | getline prev_sec
-            close(cmd)
-            cmd = "date -d \"" curr_time "\" +%s 2>/dev/null"
-            cmd | getline curr_sec
-            close(cmd)
-
-            if (prev_sec != "" && curr_sec != "") {
-                diff = curr_sec - prev_sec
-                if (diff < 1) diff = 1
-                duration = diff "s"
-            }
-        }
-
-        printf "  %-30s %-20s %s\n", module, curr_time, duration
-        prev_time = curr_time
-    }
-    ' "$path"
-
-    # Print total execution time
-    echo
-    local first_time last_time
-    first_time=$(head -1 "$path" | cut -f2)
-    last_time=$(tail -1 "$path" | cut -f2)
-
-    if [ -n "$first_time" ] && [ -n "$last_time" ] && command -v date >/dev/null 2>&1; then
-        local first_sec last_sec total_sec
-        first_sec=$(date -d "$first_time" +%s 2>/dev/null || echo 0)
-        last_sec=$(date -d "$last_time" +%s 2>/dev/null || echo 0)
-        if [ "$first_sec" -gt 0 ] && [ "$last_sec" -gt 0 ]; then
-            total_sec=$((last_sec - first_sec))
-            if [ "$total_sec" -lt 1 ]; then
-                total_sec=1
-            fi
-            printf "  Total execution time: %d seconds\n" "$total_sec"
+    local module ts curr_sec dur d
+    local first_sec=0 last_sec=0 prev_sec=0
+    while IFS=$'\t' read -r module ts; do
+        curr_sec=$(date -d "$ts" +%s 2>/dev/null || echo 0)
+        dur=""
+        if [ "$prev_sec" -gt 0 ] && [ "$curr_sec" -gt 0 ]; then
+            d=$((curr_sec - prev_sec))
+            [ "$d" -lt 1 ] && d=1
+            dur="${d}s"
         fi
+        [ "$first_sec" -eq 0 ] && first_sec=$curr_sec
+        last_sec=$curr_sec
+        prev_sec=$curr_sec
+        printf "  %-30s %-20s %s\n" "$module" "$ts" "$dur"
+    done < "$path"
+
+    if [ "$first_sec" -gt 0 ] && [ "$last_sec" -gt "$first_sec" ]; then
+        printf "\n  Total execution time: %d seconds\n" $((last_sec - first_sec))
     fi
 }

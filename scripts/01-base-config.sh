@@ -4,19 +4,15 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      01-base-config
-# SUMMARY:     System update, admin sudo user, unattended-upgrades
+# DESC:     System update, admin sudo user, unattended-upgrades
 # DEPENDS:     00-preflight
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
-# CHANGED:     1.0.2
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 # shellcheck source=../lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
-
-PLAN_MODE="${TOOLKIT_PLAN_MODE:-0}"
 
 # 1. apt update + upgrade
 if plan_action "apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y"; then
@@ -38,51 +34,45 @@ if [ "$ADMIN_MODE_CREATE_USER" != "skip" ]; then
     log_info "Admin user: $ADMIN_USER"
 fi
 
-# 3. Handle admin user based on mode
-if [ "$PLAN_MODE" = "1" ]; then
-    if [ "$ADMIN_MODE_CREATE_USER" = "skip" ]; then
-        log_info "PLAN: skipping sudo user configuration"
-    elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
-        log_info "PLAN: would create user $ADMIN_USER and add to sudo group"
-    else
-        log_info "PLAN: would change password for user $ADMIN_USER"
-    fi
-elif [ "$ADMIN_MODE_CREATE_USER" = "skip" ]; then
-    log_info "Skipping sudo user configuration (user selected skip)"
-elif [ "$ADMIN_MODE_CREATE_USER" = "yes" ]; then
-    # Create new sudo user
-    if system_user_exists "$ADMIN_USER"; then
-        log_info "User already exists: $ADMIN_USER"
-    else
-        log_info "Creating user: $ADMIN_USER"
-        run_quiet useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
-    fi
-
-    # Set password
-    if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
-        log_info "Password set for $ADMIN_USER"
-    fi
-
-    # Ensure sudo group membership
-    if id -nG "$ADMIN_USER" | tr ' ' '\n' | grep -qx sudo; then
-        log_info "User $ADMIN_USER is in sudo group"
-    else
-        run_quiet usermod -aG sudo "$ADMIN_USER"
-        log_info "Added $ADMIN_USER to sudo group"
-    fi
-else
-    # Change password for existing user
-    if ! system_user_exists "$ADMIN_USER"; then
-        log_error "User does not exist: $ADMIN_USER"
-        exit 1
-    fi
-
-    if [ -n "${ADMIN_PASSWORD:-}" ]; then
-        echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
-        log_info "Password changed for $ADMIN_USER"
-    fi
-fi
+case "$ADMIN_MODE_CREATE_USER" in
+    skip)
+        if plan_action "skip sudo user configuration"; then
+            log_info "Skipping sudo user configuration (user selected skip)"
+        fi
+        ;;
+    yes)
+        if plan_action "create user $ADMIN_USER and add to sudo group"; then
+            if system_user_exists "$ADMIN_USER"; then
+                log_info "User already exists: $ADMIN_USER"
+            else
+                log_info "Creating user: $ADMIN_USER"
+                run_quiet useradd -m -s /bin/bash -G sudo "$ADMIN_USER"
+            fi
+            if [ -n "${ADMIN_PASSWORD:-}" ]; then
+                echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
+                log_info "Password set for $ADMIN_USER"
+            fi
+            if [[ " $(id -nG "$ADMIN_USER") " == *" sudo "* ]]; then
+                log_info "User $ADMIN_USER is in sudo group"
+            else
+                run_quiet usermod -aG sudo "$ADMIN_USER"
+                log_info "Added $ADMIN_USER to sudo group"
+            fi
+        fi
+        ;;
+    *)
+        if plan_action "change password for existing user $ADMIN_USER"; then
+            if ! system_user_exists "$ADMIN_USER"; then
+                log_error "User does not exist: $ADMIN_USER"
+                exit 1
+            fi
+            if [ -n "${ADMIN_PASSWORD:-}" ]; then
+                echo "${ADMIN_USER}:${ADMIN_PASSWORD}" | run_quiet chpasswd
+                log_info "Password changed for $ADMIN_USER"
+            fi
+        fi
+        ;;
+esac
 
 # 5. Clear sensitive variables
 unset ADMIN_PASSWORD

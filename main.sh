@@ -24,18 +24,17 @@ export TOOLKIT_ROOT
 # shellcheck source=lib/common.sh
 source "$TOOLKIT_ROOT/lib/common.sh"
 
-# shellcheck source=lib/version.sh
-source "$TOOLKIT_ROOT/lib/version.sh"
+toolkit_version_info() {
+    local v
+    v="$(cat "$TOOLKIT_ROOT/VERSION" 2>/dev/null || echo unknown)"
+    echo "Ubuntu Server 26.04 LTS Configuration Toolkit v${v}"
+}
 
 # Path conventions
 TOOLKIT_PERSISTENT_DIR="${TOOLKIT_PERSISTENT_DIR:-/var/log/toolkit-setup}"
 TOOLKIT_LOG_FILE="${TOOLKIT_LOG_FILE:-$TOOLKIT_PERSISTENT_DIR/toolkit-setup.log}"
 TOOLKIT_LOCK="/tmp/.toolkit-lock"
 export TOOLKIT_PERSISTENT_DIR TOOLKIT_LOG_FILE
-
-# Best-effort: create the log dir so logs land in the file from the start.
-# Silent failure is fine — log.sh skips file writes when the dir is missing.
-mkdir -p "$TOOLKIT_PERSISTENT_DIR" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # Flags
@@ -56,8 +55,7 @@ Inspection / preview:
   --list                Print discovered modules with metadata and exit.
   --plan                Read-only audit: modules report what they would change.
   --dry-run             Run scripts with bash -n (syntax check, no execution).
-  --test                Run syntax checks, linting, and BATS tests. Can combine
-                        with --plan or --dry-run.
+  --test                Run syntax checks, linting, and BATS tests.
 
 Execution control:
   --resume              Skip modules already recorded as complete.
@@ -213,37 +211,18 @@ print_listing() {
 # ---------------------------------------------------------------------------
 install_test_deps() {
     local failed=0
-
-    if ! command -v shellcheck >/dev/null 2>&1; then
-        log_info "Installing ShellCheck..."
-        if apt-get install -y shellcheck >/dev/null 2>&1; then
-            log_info "  ✓ ShellCheck installed"
+    local pair tool pkg
+    for pair in shellcheck:shellcheck bats:bats envsubst:gettext-base; do
+        tool="${pair%:*}"; pkg="${pair#*:}"
+        command -v "$tool" >/dev/null 2>&1 && continue
+        log_info "Installing $pkg..."
+        if apt-get install -y "$pkg" >/dev/null 2>&1; then
+            log_info "  ✓ $pkg installed"
         else
-            log_warn "  ⊘ Failed to install ShellCheck (may require root)"
+            log_warn "  ⊘ Failed to install $pkg (may require root)"
             failed=1
         fi
-    fi
-
-    if ! command -v bats >/dev/null 2>&1; then
-        log_info "Installing BATS..."
-        if apt-get install -y bats >/dev/null 2>&1; then
-            log_info "  ✓ BATS installed"
-        else
-            log_warn "  ⊘ Failed to install BATS (may require root)"
-            failed=1
-        fi
-    fi
-
-    if ! command -v envsubst >/dev/null 2>&1; then
-        log_info "Installing gettext-base..."
-        if apt-get install -y gettext-base >/dev/null 2>&1; then
-            log_info "  ✓ gettext-base installed"
-        else
-            log_warn "  ⊘ Failed to install gettext-base (may require root)"
-            failed=1
-        fi
-    fi
-
+    done
     return "$failed"
 }
 
@@ -353,12 +332,8 @@ run_module() {
     local start_ts
     start_ts="$(date '+%Y-%m-%d %H:%M:%S')"
     local rc=0
-    local env_vars=("TOOLKIT_ROOT=$TOOLKIT_ROOT")
-    if [ "$FLAG_PLAN" -eq 1 ] || [ "$FLAG_DRY_RUN" -eq 1 ]; then
-        env_vars+=("TOOLKIT_PLAN_MODE=1")
-    fi
 
-    if env "${env_vars[@]}" bash "$path"; then
+    if bash "$path"; then
         log_info "===== END   $short (started $start_ts; ok) ====="
         state_mark_complete "$short"
     else
@@ -479,7 +454,7 @@ main() {
     if [ "$_questionnaire_done" -eq 0 ]; then
         # Pass selected modules to questionnaire so it can skip irrelevant sections
         local selected_csv
-        selected_csv="$(printf '%s,' "${SELECTED_MODULES[@]}" | sed 's/,$//')"
+        selected_csv="$(IFS=,; echo "${SELECTED_MODULES[*]}")"
         questionnaire_run "$selected_csv"
         questionnaire_create_config "$TOOLKIT_ROOT"
         config_load "$conf" || exit 1

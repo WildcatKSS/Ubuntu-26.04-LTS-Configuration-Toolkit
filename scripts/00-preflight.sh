@@ -4,11 +4,10 @@
 # Ubuntu Server 26.04 LTS Configuration Toolkit
 #
 # MODULE:      00-preflight
-# SUMMARY:     Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks
+# DESC:     Verify Ubuntu Server 26.04 LTS, network, disk space, and apt locks
 # DEPENDS:
 # IDEMPOTENT:  yes
 # DESTRUCTIVE: no
-# ADDED:       1.0.0
 
 set -euo pipefail
 TOOLKIT_ROOT="${TOOLKIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -144,7 +143,7 @@ else
 fi
 
 # 5. Disk space (root partition >=5 GB free) — runtime precondition
-free_gb="$(df -BG --output=avail / | awk 'NR==2 {gsub("G",""); print $1}')"
+free_gb="$(df -BG --output=avail / | tail -n1 | tr -d 'G ')"
 if [ -n "$free_gb" ] && [ "$free_gb" -lt 5 ]; then
     preflight_runtime_fail "Root partition has only ${free_gb}GB free (need >=5GB)"
 else

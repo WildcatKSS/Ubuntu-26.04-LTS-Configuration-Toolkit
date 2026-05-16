@@ -16,6 +16,15 @@ setup() {
     grep -q "hello world" "$TOOLKIT_LOG_FILE"
 }
 
+@test "run_quiet swallows stdout (regression guard for A2-class idempotency bugs)" {
+    # If a future contributor "simplifies" run_quiet to expose stdout, the
+    # idempotency guards in modules like 02-ip-config and 04-system-settings
+    # silently misfire. This test pins the contract: stdout MUST be empty.
+    local out
+    out="$(run_quiet echo hello)"
+    [ -z "$out" ]
+}
+
 @test "log_error writes ERROR level" {
     log_error "boom" 2>/dev/null
     grep -q "\[ERROR\]" "$TOOLKIT_LOG_FILE"
